@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ElonHub OS
 
-## Getting Started
+Elon Hub's internal operating system — Phase 1 foundation. See the
+[ElonHub OS spec](https://claude.ai/code/artifact/8b45cb15-bcf9-453a-af76-0f5f8a66e97d)
+for the full product spec, roadmap, and RBAC matrix this build implements.
 
-First, run the development server:
+## What's here (foundation phase)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Auth** — Supabase email/password, session refresh via `src/proxy.ts`.
+- **RBAC** — 10 roles (`app_role` enum), enforced with Postgres row-level
+  security in `supabase/migrations/0002_rls.sql`, not just in the UI.
+- **Schema** — the full core data model (`supabase/migrations/0001_init.sql`):
+  organisations, profiles, customers, contacts, leads, opportunities,
+  services, quotes, sales orders, projects, tasks, time entries, invoices,
+  payments, audit log.
+- **Audit log** — every write to customers/leads/opportunities/quotes/
+  invoices/payments/projects is recorded automatically via trigger.
+- **Dashboard** — the four-row executive view (Financial/Sales/Projects/
+  Customers), reading live from the database.
+- **Team** — lists everyone in the workspace; a `super_admin` can change
+  roles from here (guarded server-side against self-escalation).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+CRM, Projects, Finance and Support have nav entries but no screens yet —
+that's Phase 2. The schema for all of it already exists.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Copy `.env.local.example` to `.env.local` and fill in your Supabase
+   project's URL and anon key (Project Settings → API).
+2. Apply the migrations in `supabase/migrations/` to that project, in
+   order (Supabase dashboard → SQL Editor, or `supabase db push` with the
+   CLI linked to the project).
+3. `npm install && npm run dev`
+4. Sign up at `/signup` — the first account becomes `super_admin`.
 
-## Learn More
+## Stack
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js (App Router) + TypeScript + Tailwind CSS, Supabase (Postgres +
+Auth), deployed on Vercel.

@@ -18,7 +18,7 @@ export default async function LoginPage({
         </div>
 
         <h1 className="mb-1 text-2xl font-semibold tracking-tight text-text">Sign in</h1>
-        <p className="mb-8 text-sm text-text-dim">Elon Hub's internal operating system.</p>
+        <p className="mb-8 text-sm text-text-dim">Elon Hub&rsquo;s internal operating system.</p>
 
         {error && (
           <div className="mb-5 rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">

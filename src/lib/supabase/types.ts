@@ -154,6 +154,82 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["opportunities"]["Row"]>;
         Relationships: [];
       };
+      services: {
+        Row: {
+          id: string;
+          org_id: string;
+          sku: string;
+          name: string;
+          description: string | null;
+          category: string | null;
+          cost: number;
+          sell_price: number;
+          is_vatable: boolean;
+          kind: "once_off" | "recurring";
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["services"]["Row"]> & {
+          org_id: string;
+          sku: string;
+          name: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["services"]["Row"]>;
+        Relationships: [];
+      };
+      quote_items: {
+        Row: {
+          id: string;
+          quote_id: string;
+          service_id: string | null;
+          description: string;
+          quantity: number;
+          unit_price: number;
+          discount_pct: number;
+          is_vatable: boolean;
+          sort_order: number;
+        };
+        Insert: Partial<Database["public"]["Tables"]["quote_items"]["Row"]> & {
+          quote_id: string;
+          description: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["quote_items"]["Row"]>;
+        Relationships: [];
+      };
+      sales_orders: {
+        Row: {
+          id: string;
+          org_id: string;
+          quote_id: string | null;
+          customer_id: string;
+          number: string;
+          total: number;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["sales_orders"]["Row"]> & {
+          org_id: string;
+          customer_id: string;
+          number: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["sales_orders"]["Row"]>;
+        Relationships: [];
+      };
+      invoice_items: {
+        Row: {
+          id: string;
+          invoice_id: string;
+          description: string;
+          quantity: number;
+          unit_price: number;
+          is_vatable: boolean;
+          sort_order: number;
+        };
+        Insert: Partial<Database["public"]["Tables"]["invoice_items"]["Row"]> & {
+          invoice_id: string;
+          description: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["invoice_items"]["Row"]>;
+        Relationships: [];
+      };
       quotes: {
         Row: {
           id: string;

@@ -31,6 +31,32 @@ export function canDeleteCustomer(role: AppRole): boolean {
   return CUSTOMER_DELETE.includes(role);
 }
 
+/** services_write: pricing is set by sales and finance leadership only. */
+const SERVICE_WRITE: AppRole[] = ["super_admin", "sales_manager", "finance"];
+
+/** quotes_write: adds finance and salesperson to the service list. */
+const QUOTE_WRITE: AppRole[] = ["super_admin", "sales_manager", "salesperson", "finance"];
+const QUOTE_EDIT_ALL: AppRole[] = ["super_admin", "sales_manager", "finance"];
+
+export function canManageServices(role: AppRole): boolean {
+  return SERVICE_WRITE.includes(role);
+}
+
+export function canCreateQuote(role: AppRole): boolean {
+  return QUOTE_WRITE.includes(role);
+}
+
+/**
+ * Whether this user may change a quote and its line items.
+ *
+ * Mirrors quotes_update and the quote_items policies, which all defer to the
+ * parent quote's owner. Line items have no owner of their own.
+ */
+export function canEditQuote(role: AppRole, ownerId: string | null, userId: string): boolean {
+  if (QUOTE_EDIT_ALL.includes(role)) return true;
+  return ownerId !== null && ownerId === userId;
+}
+
 /** leads_write and opportunities_write use the same role list as customers_write. */
 export function canCreateLead(role: AppRole): boolean {
   return CUSTOMER_WRITE.includes(role);

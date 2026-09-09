@@ -31,6 +31,31 @@ export function canDeleteCustomer(role: AppRole): boolean {
   return CUSTOMER_DELETE.includes(role);
 }
 
+/** leads_write and opportunities_write use the same role list as customers_write. */
+export function canCreateLead(role: AppRole): boolean {
+  return CUSTOMER_WRITE.includes(role);
+}
+
+export function canCreateOpportunity(role: AppRole): boolean {
+  return CUSTOMER_WRITE.includes(role);
+}
+
+/**
+ * Whether this user may move an opportunity along the pipeline.
+ *
+ * Mirrors opportunities_update: leadership moves anything, a salesperson moves
+ * only their own. Board columns stay visible either way — RLS already decided
+ * what is visible; this only decides whether the stage control is interactive.
+ */
+export function canMoveOpportunity(
+  role: AppRole,
+  ownerId: string | null,
+  userId: string
+): boolean {
+  if (CUSTOMER_EDIT_ALL.includes(role)) return true;
+  return ownerId !== null && ownerId === userId;
+}
+
 /**
  * Whether this user may edit a given customer.
  *

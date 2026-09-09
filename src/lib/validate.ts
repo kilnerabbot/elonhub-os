@@ -69,6 +69,69 @@ export class Validator {
     return value;
   }
 
+  /** Whole number within bounds. Blank falls back to `fallback`. */
+  integer(name: string, label: string, min: number, max: number, fallback = 0): number {
+    const raw = field(this.form, name);
+    if (!raw) return fallback;
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < min || n > max) {
+      this.errors[name] = `${label} must be a whole number between ${min} and ${max}.`;
+      return fallback;
+    }
+    return n;
+  }
+
+  /**
+   * A non-negative money amount.
+   *
+   * Rejects negatives outright: a negative deal value is always a data-entry
+   * error here, and it would silently corrupt pipeline and forecast totals
+   * that are summed without any sign check.
+   */
+  money(name: string, label: string): number {
+    const raw = field(this.form, name).replace(/[\s,]/g, "");
+    if (!raw) return 0;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0) {
+      this.errors[name] = `${label} must be a positive amount.`;
+      return 0;
+    }
+    if (n > 999_999_999) {
+      this.errors[name] = `${label} is unrealistically large.`;
+      return 0;
+    }
+    // Two decimal places to match numeric(12,2); more would be silently
+    // rounded by Postgres and the stored figure would not match what was typed.
+    return Math.round(n * 100) / 100;
+  }
+
+  /** Optional ISO date (YYYY-MM-DD), as produced by <input type="date">. */
+  optionalDate(name: string, label: string): string | null {
+    const raw = field(this.form, name);
+    if (!raw) return null;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw) || Number.isNaN(Date.parse(raw))) {
+      this.errors[name] = `${label} must be a valid date.`;
+      return null;
+    }
+    return raw;
+  }
+
+  /**
+   * A value from a fixed allow-list.
+   *
+   * Enum columns must never receive unvalidated input: an unknown value
+   * produces a raw Postgres type error rather than a usable message.
+   */
+  choice<T extends string>(name: string, label: string, allowed: readonly T[], fallback: T): T {
+    const raw = field(this.form, name);
+    const found = allowed.find((a) => a === raw);
+    if (!found) {
+      if (raw) this.errors[name] = `${label} is not a recognised value.`;
+      return fallback;
+    }
+    return found;
+  }
+
   get ok(): boolean {
     return Object.keys(this.errors).length === 0;
   }

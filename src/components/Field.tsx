@@ -68,6 +68,50 @@ export function Field({
   );
 }
 
+export function SelectField({
+  name,
+  label,
+  options,
+  error,
+  defaultValue,
+}: {
+  name: string;
+  label: string;
+  options: readonly string[];
+  error?: string;
+  defaultValue?: string;
+}) {
+  const id = `field-${name}`;
+  const errorId = `${id}-error`;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[12px] font-medium text-text-dim">
+        {label}
+      </label>
+      <select
+        id={id}
+        name={name}
+        defaultValue={defaultValue}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={`${BASE} ${error ? "border-danger" : "border-border"} capitalize`}
+      >
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o.replace(/_/g, " ")}
+          </option>
+        ))}
+      </select>
+      {error && (
+        <p id={errorId} className="text-[12px] text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** Submit button that reports pending state, so a slow save cannot be double-fired. */
 export function Submit({ children }: { children: React.ReactNode }) {
   const { pending } = useFormStatus();

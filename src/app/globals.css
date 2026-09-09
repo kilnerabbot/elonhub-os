@@ -1,40 +1,65 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0a0a0a;
-  --color-surface: #141210;
-  --color-surface-2: #1a1815;
-  --color-border: rgba(244, 242, 237, 0.12);
-  --color-border-strong: rgba(244, 242, 237, 0.2);
-  --color-text: #f4f2ed;
-  --color-text-dim: rgba(244, 242, 237, 0.66);
-  --color-text-faint: rgba(244, 242, 237, 0.42);
-  --color-gold: #caa04a;
-  --color-gold-bright: #e4bc63;
-  --color-good: #7fb88f;
-  --color-amber: #d9a441;
-  --color-danger: #d97a6a;
+  /* Page + surfaces */
+  --color-bg: #e9e3d6;
+  --color-surface: #ffffff;
+  --color-surface-2: #f6f3ec;
+  --color-border: #e7e3d9;
+  --color-border-strong: #d5cfc1;
+
+  /* Type */
+  --color-text: #171715;
+  --color-text-dim: #6b675e;
+  --color-text-faint: #9a958a;
+
+  /* Dark sidebar family */
+  --color-rail: #1b1b19;
+  --color-rail-2: #2a2a27;
+  --color-rail-text: #efede6;
+  --color-rail-dim: #8f8b81;
+  --color-rail-border: #302f2b;
+
+  /* Accents */
+  --color-accent: #d0603a;
+  --color-accent-soft: #f6ddd2;
+  --color-violet: #7a7fd1;
+  --color-violet-soft: #e2e2f5;
+  --color-sage: #c6d2b4;
+  --color-good: #4e7a52;
+  --color-good-soft: #dfe9cf;
+  --color-danger: #b4543f;
+  --color-danger-soft: #f3dcd4;
+
+  /* Back-compat aliases used by login/signup/team */
+  --color-gold: #d0603a;
+  --color-gold-bright: #b94e2c;
+  --color-amber: #c98a2e;
+
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
-}
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
 
-body {
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-}
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
 
-::selection {
-  background: rgba(202, 160, 74, 0.25);
-}
+  ::selection {
+    background: rgba(208, 96, 58, 0.2);
+  }
 
-* {
-  border-color: var(--color-border);
+  /* Layered so Tailwind border-<color> utilities can still win. */
+  * {
+    border-color: var(--color-border);
+  }
 }

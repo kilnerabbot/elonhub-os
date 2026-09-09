@@ -39,7 +39,7 @@ export default async function SignupPage({
               type="text"
               required
               autoComplete="name"
-              className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
+              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -52,7 +52,7 @@ export default async function SignupPage({
               type="email"
               required
               autoComplete="email"
-              className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
+              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -66,12 +66,12 @@ export default async function SignupPage({
               required
               minLength={8}
               autoComplete="new-password"
-              className="rounded-md border border-border bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
+              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
             />
           </div>
           <button
             type="submit"
-            className="mt-2 rounded-md bg-gold px-4 py-2.5 text-sm font-medium text-bg transition-colors hover:bg-gold-bright"
+            className="mt-2 rounded-lg bg-gold-bright px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gold"
           >
             Create account
           </button>

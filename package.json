@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/lib/metrics.test.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/lib/search.test.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON src/lib/validate.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

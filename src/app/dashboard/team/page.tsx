@@ -16,16 +16,15 @@ export default async function TeamPage() {
     .order("created_at", { ascending: true });
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-8">
-      <h1 className="mb-1 text-2xl font-semibold tracking-tight text-text">Team</h1>
-      <p className="mb-8 text-sm text-text-dim">
+    <div className="max-w-3xl p-6">
+      <p className="mb-6 text-sm text-text-dim">
         Every signed-in user and their role. {isAdmin ? "You can change roles below." : ""}
       </p>
 
-      <div className="overflow-hidden rounded-lg border border-border">
+      <div className="overflow-hidden rounded-2xl border border-border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-surface">
+            <tr className="border-b border-border bg-surface-2">
               <th className="px-4 py-2.5 text-left font-mono text-[10.5px] uppercase tracking-[0.08em] text-text-faint">
                 Name
               </th>

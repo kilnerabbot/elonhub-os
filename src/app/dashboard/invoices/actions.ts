@@ -386,6 +386,7 @@ export async function recordPayment(
 
   revalidatePath(`/dashboard/invoices/${invoiceId}`);
   revalidatePath("/dashboard/invoices");
+  revalidatePath("/dashboard/payments");
   revalidatePath("/dashboard");
   return { ok: true };
 }

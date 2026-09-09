@@ -152,6 +152,7 @@ export async function createTask(
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "createTask.insert") };
 
   revalidatePath(`/dashboard/projects/${projectId}`);
+  revalidatePath("/dashboard/tasks");
   revalidatePath("/dashboard");
   return { ok: true };
 }
@@ -187,6 +188,7 @@ export async function setTaskStatus(
   }
 
   revalidatePath(`/dashboard/projects/${projectId}`);
+  revalidatePath("/dashboard/tasks");
   revalidatePath("/dashboard");
   return { ok: true };
 }

@@ -16,6 +16,8 @@ const TITLES: Record<string, string> = {
   "/dashboard/crm/new": "New customer",
   "/dashboard/projects": "Projects",
   "/dashboard/invoices": "Invoices",
+  "/dashboard/payments": "Payments",
+  "/dashboard/tasks": "Tasks",
   "/dashboard/support": "Support",
 };
 

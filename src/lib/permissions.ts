@@ -42,6 +42,15 @@ export function canManageInvoices(role: AppRole): boolean {
   return FINANCE_WRITE.includes(role);
 }
 
+/**
+ * payments_select is narrower than invoices_select: admins and finance only.
+ * A project manager can see their project's invoices but not the money
+ * received against them.
+ */
+export function canViewPayments(role: AppRole): boolean {
+  return role === "super_admin" || role === "director" || role === "finance";
+}
+
 /** projects_write: only super_admin and project managers open a project. */
 const PROJECT_WRITE: AppRole[] = ["super_admin", "project_manager"];
 

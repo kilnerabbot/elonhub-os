@@ -62,6 +62,8 @@ const SECTIONS = [
     heading: "Operations",
     items: [
       { href: "/dashboard/invoices", label: "Invoices", icon: ICONS.coins },
+      { href: "/dashboard/payments", label: "Payments", icon: ICONS.coins },
+      { href: "/dashboard/tasks", label: "Tasks", icon: ICONS.grid },
       { href: "/dashboard/support", label: "Support", icon: ICONS.life, disabled: true },
       { href: "/dashboard/team", label: "Team", icon: ICONS.shield },
     ],

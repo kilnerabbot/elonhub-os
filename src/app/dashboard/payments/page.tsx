@@ -8,6 +8,7 @@ import { num } from "@/lib/metrics";
 import { outstandingCents } from "@/lib/invoice";
 import { Card } from "@/components/ui";
 import { PaymentEntryForm, type PayableInvoice } from "./PaymentEntryForm";
+import { ProofUpload } from "./ProofUpload";
 
 export default async function PaymentsPage() {
   const session = await getSession();
@@ -35,7 +36,7 @@ export default async function PaymentsPage() {
   const [{ data: payments }, { data: invoices }, { data: customers }] = await Promise.all([
     supabase
       .from("payments")
-      .select("id, amount, paid_at, method, reference, invoice_id")
+      .select("id, amount, paid_at, method, reference, invoice_id, proof_path")
       .order("paid_at", { ascending: false })
       .limit(200),
     supabase
@@ -111,6 +112,7 @@ export default async function PaymentsPage() {
                 <Th>Method</Th>
                 <Th align="right">Amount</Th>
                 <Th align="right">Receipt</Th>
+                <Th align="right">Proof</Th>
               </tr>
             </thead>
             <tbody>
@@ -152,6 +154,22 @@ export default async function PaymentsPage() {
                       >
                         PDF
                       </a>
+                    </td>
+                    <td className="py-2.5 text-right">
+                      {canRecord ? (
+                        <ProofUpload paymentId={p.id} hasProof={p.proof_path !== null} />
+                      ) : p.proof_path ? (
+                        <a
+                          href={`/api/payment-proof/${p.id}`}
+                          target="_blank"
+                          rel="noopener"
+                          className="text-[11px] text-good hover:underline"
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-text-faint">—</span>
+                      )}
                     </td>
                   </tr>
                 );

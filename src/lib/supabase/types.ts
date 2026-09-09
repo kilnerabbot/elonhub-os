@@ -359,6 +359,7 @@ export interface Database {
           paid_at: string;
           method: string | null;
           reference: string | null;
+          proof_path: string | null;
           created_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["payments"]["Row"]> & {

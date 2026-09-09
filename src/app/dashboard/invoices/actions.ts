@@ -68,7 +68,7 @@ async function reconcile(invoiceId: string): Promise<string | null> {
     .update({ ...totals, status })
     .eq("id", invoiceId);
 
-  return error ? describeDbError(error) : null;
+  return error ? describeDbError(error, "reconcile.updateInvoice") : null;
 }
 
 export async function createInvoice(
@@ -130,7 +130,7 @@ export async function createInvoice(
       break;
     }
     if (error.code !== "23505") {
-      return { ok: false, errors: {}, message: describeDbError(error) };
+      return { ok: false, errors: {}, message: describeDbError(error, "createInvoice.insertInvoice") };
     }
   }
 
@@ -159,7 +159,7 @@ export async function createInvoice(
 
     if (rows.length > 0) {
       const { error } = await supabase.from("invoice_items").insert(rows);
-      if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+      if (error) return { ok: false, errors: {}, message: describeDbError(error, "createInvoice.insertItems") };
     }
   }
 
@@ -206,7 +206,7 @@ export async function addInvoiceItem(
     .from("invoice_items")
     .insert({ ...values, invoice_id: invoiceId });
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "addInvoiceItem.insert") };
 
   const reconcileError = await reconcile(invoiceId);
   if (reconcileError) return { ok: false, errors: {}, message: reconcileError };
@@ -277,7 +277,7 @@ export async function issueInvoice(
     .update({ status: "sent" })
     .eq("id", invoiceId);
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "issueInvoice.update") };
 
   await reconcile(invoiceId);
   revalidatePath(`/dashboard/invoices/${invoiceId}`);
@@ -316,7 +316,7 @@ export async function voidInvoice(
     .update({ status: "void" })
     .eq("id", invoiceId);
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "voidInvoice.update") };
 
   revalidatePath(`/dashboard/invoices/${invoiceId}`);
   revalidatePath("/dashboard/invoices");
@@ -379,7 +379,7 @@ export async function recordPayment(
     reference,
   });
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "recordPayment.insert") };
 
   const reconcileError = await reconcile(invoiceId);
   if (reconcileError) return { ok: false, errors: {}, message: reconcileError };
@@ -483,7 +483,7 @@ export async function convertQuoteToInvoice(
       break;
     }
     if (error.code !== "23505") {
-      return { ok: false, errors: {}, message: describeDbError(error) };
+      return { ok: false, errors: {}, message: describeDbError(error, "convertQuote.insertInvoice") };
     }
   }
 
@@ -503,7 +503,7 @@ export async function convertQuoteToInvoice(
   ).map((line) => ({ ...line, invoice_id: invoiceId }));
 
   const { error: itemsError } = await supabase.from("invoice_items").insert(rows);
-  if (itemsError) return { ok: false, errors: {}, message: describeDbError(itemsError) };
+  if (itemsError) return { ok: false, errors: {}, message: describeDbError(itemsError, "convertQuote.insertItems") };
 
   // Invoicing a quote implies the client agreed to it. Only advance quotes that
   // are still in play — an already-accepted quote keeps its status.

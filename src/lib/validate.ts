@@ -147,7 +147,20 @@ export class Validator {
  * Raw driver messages leak schema detail and read as noise, but silence is
  * worse — an RLS rejection must never look like success.
  */
-export function describeDbError(error: { code?: string; message: string }): string {
+export function describeDbError(
+  error: { code?: string; message?: string; details?: string; hint?: string },
+  context?: string
+): string {
+  // Always log the full error server-side. It lands in the Vercel function
+  // logs, where it is useful, rather than in front of a user who cannot act on
+  // it. Without this an unrecognised failure is undiagnosable after the fact.
+  console.error("[db]", context ?? "unknown", {
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  });
+
   switch (error.code) {
     case "42501":
       return "Your role does not allow that. Ask an administrator if you need access.";
@@ -155,7 +168,27 @@ export function describeDbError(error: { code?: string; message: string }): stri
       return "That record already exists.";
     case "23503":
       return "That refers to a record that no longer exists.";
+    case "23502":
+      return "A required field was missing. Please check the form and try again.";
+    case "23514":
+      return "One of those values is outside the allowed range.";
+    case "22P02":
+      return "One of those values was not in the expected format.";
+    case "42804":
+      // The handle_new_user enum-cast class of bug. Naming it makes the next
+      // occurrence identifiable in one step rather than several.
+      return "Type mismatch saving that record (42804). This is a bug — please report it.";
+    case "PGRST116":
+      return "That record could not be found, or your role cannot see it.";
+    case "PGRST204":
+      return "The database schema is out of date with the app. Please report this.";
+    case "PGRST301":
+      return "Your session has expired. Sign in again.";
     default:
-      return "Could not save. Please try again.";
+      // Surface the SQLSTATE. A five-character code leaks nothing meaningful
+      // about the schema but turns "it broke" into a one-step diagnosis.
+      return error.code
+        ? `Could not save (error ${error.code}). Please report this code.`
+        : "Could not save. Please try again.";
   }
 }

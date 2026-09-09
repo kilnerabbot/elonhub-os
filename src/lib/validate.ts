@@ -132,6 +132,35 @@ export class Validator {
     return found;
   }
 
+  /**
+   * A password being set for someone else.
+   *
+   * Length is the only rule that reliably helps. Composition requirements
+   * ("one symbol, one digit") push people toward Password1! and measurably
+   * weaken the result, which is why NIST dropped them.
+   */
+  password(name: string, label: string, min = 8): string {
+    const value = this.form.get(name);
+    const raw = typeof value === "string" ? value : "";
+    if (!raw) {
+      this.errors[name] = `${label} is required.`;
+      return "";
+    }
+    // Not trimmed: leading and trailing spaces are legitimate password
+    // characters, and silently stripping them locks the person out later.
+    if (raw.length < min) {
+      this.errors[name] = `${label} must be at least ${min} characters.`;
+      return "";
+    }
+    if (raw.length > 72) {
+      // bcrypt truncates beyond 72 bytes, so anything longer is silently
+      // ignored past that point.
+      this.errors[name] = `${label} must be 72 characters or fewer.`;
+      return "";
+    }
+    return raw;
+  }
+
   get ok(): boolean {
     return Object.keys(this.errors).length === 0;
   }

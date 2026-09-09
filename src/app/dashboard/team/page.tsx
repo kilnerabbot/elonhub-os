@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { canInviteMember } from "@/lib/permissions";
@@ -6,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui";
 import { label } from "@/lib/domain";
 import { RoleSelect } from "./RoleSelect";
-import { InviteForm } from "./InviteForm";
+import { MemberForm } from "./MemberForm";
 import { revokeInvitation } from "./actions";
 
 export default async function TeamPage() {
@@ -30,12 +29,9 @@ export default async function TeamPage() {
       .order("created_at", { ascending: false }),
   ]);
 
-  // Built from the request so the link is correct on the deployment it is
-  // copied from, rather than hard-coded to one environment.
-  const host = (await headers()).get("host") ?? "elonhub-os.vercel.app";
-  const protocol = host.startsWith("localhost") ? "http" : "https";
-  const signupUrl = `${protocol}://${host}/signup`;
-
+  // Normally empty: an invitation is written and consumed within the same
+  // request. A row lingering here means account creation failed after the
+  // grant was written, so it is shown for cleanup rather than hidden.
   const pending = invitations ?? [];
 
   return (
@@ -83,7 +79,7 @@ export default async function TeamPage() {
 
       {pending.length > 0 && (
         <div className="mb-4">
-          <Card title={`Pending invitations (${pending.length})`}>
+          <Card title={`Unclaimed grants (${pending.length})`}>
             <ul className="flex flex-col gap-2">
               {pending.map((i) => (
                 <li
@@ -118,7 +114,7 @@ export default async function TeamPage() {
 
       {canInvite && (
         <Card title="Add a team member">
-          <InviteForm signupUrl={signupUrl} />
+          <MemberForm />
         </Card>
       )}
     </div>

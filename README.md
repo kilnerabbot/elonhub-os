@@ -37,3 +37,27 @@ that's Phase 2. The schema for all of it already exists.
 
 Next.js (App Router) + TypeScript + Tailwind CSS, Supabase (Postgres +
 Auth), deployed on Vercel.
+
+## Environment variables
+
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Vercel + local | Supabase project URL. Public by design. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Vercel + local | Anon key. Public by design; RLS is what protects the data. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Vercel only, **never** `NEXT_PUBLIC_` | Required only by Team -> Add a team member, which creates auth users. |
+
+### About the service-role key
+
+This key **bypasses Row Level Security on every table**. Every policy in
+`0002_rls.sql`, `0005` and `0007` is inert for requests made with it.
+
+* It is read only by `src/lib/supabase/admin.ts`, which is imported by exactly
+  one module: `src/app/dashboard/team/actions.ts`.
+* It must never be imported from a client component, or from any module a
+  client component imports, or it ends up in the browser bundle.
+* The missing `NEXT_PUBLIC_` prefix is load-bearing: Next only inlines
+  variables carrying that prefix into client bundles.
+
+Find it in the Supabase dashboard under **Project settings -> API -> service_role**.
+Without it, everything works except adding team members, which reports that the
+key is missing.

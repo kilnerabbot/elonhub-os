@@ -372,6 +372,24 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["payments"]["Row"]>;
         Relationships: [];
       };
+      invitations: {
+        Row: {
+          id: string;
+          org_id: string;
+          email: string;
+          full_name: string | null;
+          role: AppRole;
+          invited_by: string | null;
+          accepted_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["invitations"]["Row"]> & {
+          org_id: string;
+          email: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["invitations"]["Row"]>;
+        Relationships: [];
+      };
       tickets: {
         Row: {
           id: string;

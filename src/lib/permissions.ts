@@ -71,6 +71,14 @@ export function canWorkTicket(
   return assigneeId !== null && assigneeId === userId;
 }
 
+/**
+ * Only super_admin issues invitations. An invitation sets a role, so allowing
+ * anyone else to send one would be a way around prevent_role_escalation.
+ */
+export function canInviteMember(role: AppRole): boolean {
+  return role === "super_admin";
+}
+
 /** tickets_select: admins, support agents, and the assignee. */
 export function canViewSupport(role: AppRole): boolean {
   return role === "super_admin" || role === "director" || role === "support_agent";

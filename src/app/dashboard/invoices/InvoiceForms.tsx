@@ -67,7 +67,7 @@ export function CreateInvoiceForm({
             ))}
           </select>
           <p className="text-[11px] text-text-faint">
-            Make sure the quote belongs to the customer selected above.
+            Choosing a quote also sets the customer from that quote, and copies its lines.
           </p>
         </div>
       )}

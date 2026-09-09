@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { canEditQuote } from "@/lib/permissions";
+import { canEditQuote, canManageInvoices } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
 import { num } from "@/lib/metrics";
 import { lineNet, quoteTotals } from "@/lib/money";
 import { Card } from "@/components/ui";
 import { AddItemForm, StatusForm } from "../QuoteForms";
+import { ConvertToInvoiceForm } from "../ConvertToInvoiceForm";
 import { removeQuoteItem } from "../actions";
 
 export default async function QuoteDetailPage({
@@ -28,7 +29,7 @@ export default async function QuoteDetailPage({
 
   if (!quote) notFound();
 
-  const [{ data: items }, { data: customer }, { data: services }, { data: org }] =
+  const [{ data: items }, { data: customer }, { data: services }, { data: org }, { data: raised }] =
     await Promise.all([
       supabase
         .from("quote_items")
@@ -38,6 +39,7 @@ export default async function QuoteDetailPage({
       supabase.from("customers").select("legal_name").eq("id", quote.customer_id).maybeSingle(),
       supabase.from("services").select("id, sku, name, sell_price, is_vatable").order("sku").limit(200),
       supabase.from("organisations").select("vat_rate").maybeSingle(),
+      supabase.from("invoices").select("id, number").eq("quote_id", id).limit(1),
     ]);
 
   const lines = (items ?? []).map((i) => ({
@@ -55,6 +57,8 @@ export default async function QuoteDetailPage({
   const stale = Math.abs(computed.total - num(quote.total)) >= 0.01;
 
   const editable = canEditQuote(session.role, quote.owner_id, session.userId);
+  const canInvoice = canManageInvoices(session.role);
+  const existingInvoice = (raised ?? [])[0] ?? null;
 
   return (
     <div className="max-w-4xl p-6">
@@ -174,6 +178,14 @@ export default async function QuoteDetailPage({
           </dl>
         </Card>
       </div>
+
+      {canInvoice && lines.length > 0 && (
+        <div className="mt-4">
+          <Card title="Convert to invoice">
+            <ConvertToInvoiceForm quoteId={quote.id} existingInvoice={existingInvoice} />
+          </Card>
+        </div>
+      )}
 
       {editable && (
         <div className="mt-4">

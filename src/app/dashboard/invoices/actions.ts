@@ -6,7 +6,8 @@ import { getSession } from "@/lib/auth";
 import { canManageInvoices } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { nextReference } from "@/lib/domain";
-import { lineNetCents, quoteTotals, toCents, toRand } from "@/lib/money";
+import { quoteTotals, toCents } from "@/lib/money";
+import { toInvoiceLines } from "@/lib/quoteToInvoice";
 import { deriveStatus, isEditable, outstandingCents } from "@/lib/invoice";
 import { Validator, describeDbError, field, type ActionResult } from "@/lib/validate";
 
@@ -79,12 +80,26 @@ export async function createInvoice(
   if (!canManageInvoices(session.role)) return DENIED;
 
   const v = new Validator(form);
-  const customerId = v.required("customer_id", "Customer", 40);
+  let customerId = v.required("customer_id", "Customer", 40);
   const dueDate = v.optionalDate("due_date", "Due date");
   if (!v.ok) return v.fail();
 
   const quoteId = field(form, "quote_id");
   const supabase = await createClient();
+
+  // When a quote is chosen it is the authority on who is being billed. The
+  // form previously let the two disagree and merely warned about it, which
+  // would have invoiced one customer for another's quoted work.
+  if (quoteId) {
+    const { data: quote } = await supabase
+      .from("quotes")
+      .select("customer_id")
+      .eq("id", quoteId)
+      .maybeSingle();
+    if (!quote) return { ok: false, errors: {}, message: "That quote could not be found." };
+    customerId = quote.customer_id;
+  }
+
   const year = new Date().getFullYear();
 
   let invoiceId: string | null = null;
@@ -131,38 +146,16 @@ export async function createInvoice(
       .eq("quote_id", quoteId)
       .order("sort_order", { ascending: true });
 
-    const rows = (quoteItems ?? []).map((q) => {
-      const discount = Number(q.discount_pct);
-      const line = {
-        quantity: Number(q.quantity),
-        unit_price: Number(q.unit_price),
-        discount_pct: discount,
-        is_vatable: q.is_vatable,
-      };
-      // invoice_items cannot express a discount. Rather than divide the
-      // discounted net back into a per-unit price and lose cents to rounding,
-      // a discounted line becomes a single unit priced at its exact net, with
-      // the original quantity and discount stated in the description. The
-      // invoice total then matches the quote total to the cent.
-      if (discount > 0) {
-        return {
-          invoice_id: invoiceId,
-          description: `${q.description} (${Number(q.quantity)} × ${q.unit_price}, less ${discount}%)`,
-          quantity: 1,
-          unit_price: toRand(lineNetCents(line)),
-          is_vatable: q.is_vatable,
-          sort_order: q.sort_order,
-        };
-      }
-      return {
-        invoice_id: invoiceId,
+    const rows = toInvoiceLines(
+      (quoteItems ?? []).map((q) => ({
         description: q.description,
         quantity: Number(q.quantity),
         unit_price: Number(q.unit_price),
+        discount_pct: Number(q.discount_pct),
         is_vatable: q.is_vatable,
         sort_order: q.sort_order,
-      };
-    });
+      }))
+    ).map((line) => ({ ...line, invoice_id: invoiceId }));
 
     if (rows.length > 0) {
       const { error } = await supabase.from("invoice_items").insert(rows);
@@ -395,4 +388,133 @@ export async function recordPayment(
   revalidatePath("/dashboard/invoices");
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+/**
+ * Raise an invoice from a quote in one step.
+ *
+ * The same work as createInvoice with a quote selected, but reached from the
+ * quote itself, where the decision is actually made. It also refuses to invoice
+ * the same quote twice — double-billing a client is the kind of error that
+ * costs a relationship, and nothing in the schema prevents it.
+ */
+export async function convertQuoteToInvoice(
+  _prev: ActionResult | null,
+  form: FormData
+): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (!canManageInvoices(session.role)) return DENIED;
+
+  const quoteId = field(form, "quote_id");
+  if (!quoteId) return { ok: false, errors: {}, message: "Missing quote." };
+
+  const v = new Validator(form);
+  const dueDate = v.optionalDate("due_date", "Due date");
+  if (!v.ok) return v.fail();
+
+  const supabase = await createClient();
+
+  const [{ data: quote }, { data: existing }] = await Promise.all([
+    supabase
+      .from("quotes")
+      .select("id, number, status, customer_id, payment_terms")
+      .eq("id", quoteId)
+      .maybeSingle(),
+    supabase.from("invoices").select("id, number").eq("quote_id", quoteId).limit(1),
+  ]);
+
+  if (!quote) return { ok: false, errors: {}, message: "That quote could not be found." };
+
+  if ((existing ?? []).length > 0) {
+    return {
+      ok: false,
+      errors: {},
+      message: `Invoice ${existing![0].number} was already raised from this quote.`,
+    };
+  }
+
+  // A rejected quote was not agreed to. Invoicing it would bill work the client
+  // declined; re-quote instead.
+  if (quote.status === "rejected") {
+    return {
+      ok: false,
+      errors: {},
+      message: "This quote was rejected. Raise a new quote rather than invoicing this one.",
+    };
+  }
+
+  const { data: quoteItems } = await supabase
+    .from("quote_items")
+    .select("description, quantity, unit_price, discount_pct, is_vatable, sort_order")
+    .eq("quote_id", quoteId)
+    .order("sort_order", { ascending: true });
+
+  if ((quoteItems ?? []).length === 0) {
+    return { ok: false, errors: {}, message: "This quote has no line items to invoice." };
+  }
+
+  const year = new Date().getFullYear();
+  let invoiceId: string | null = null;
+
+  for (let attempt = 0; attempt < 2 && invoiceId === null; attempt++) {
+    const { count } = await supabase
+      .from("invoices")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", `${year}-01-01`);
+
+    const number = nextReference("INV", year, (count ?? 0) + attempt);
+
+    const { data, error } = await supabase
+      .from("invoices")
+      .insert({
+        org_id: session.orgId,
+        customer_id: quote.customer_id,
+        quote_id: quote.id,
+        number,
+        status: "draft",
+        due_date: dueDate,
+      })
+      .select("id")
+      .single();
+
+    if (!error) {
+      invoiceId = data.id;
+      break;
+    }
+    if (error.code !== "23505") {
+      return { ok: false, errors: {}, message: describeDbError(error) };
+    }
+  }
+
+  if (invoiceId === null) {
+    return { ok: false, errors: {}, message: "Could not allocate an invoice number. Try again." };
+  }
+
+  const rows = toInvoiceLines(
+    (quoteItems ?? []).map((q) => ({
+      description: q.description,
+      quantity: Number(q.quantity),
+      unit_price: Number(q.unit_price),
+      discount_pct: Number(q.discount_pct),
+      is_vatable: q.is_vatable,
+      sort_order: q.sort_order,
+    }))
+  ).map((line) => ({ ...line, invoice_id: invoiceId }));
+
+  const { error: itemsError } = await supabase.from("invoice_items").insert(rows);
+  if (itemsError) return { ok: false, errors: {}, message: describeDbError(itemsError) };
+
+  // Invoicing a quote implies the client agreed to it. Only advance quotes that
+  // are still in play — an already-accepted quote keeps its status.
+  if (["draft", "sent", "viewed", "expired"].includes(quote.status)) {
+    await supabase.from("quotes").update({ status: "accepted" }).eq("id", quote.id);
+  }
+
+  const reconcileError = await reconcile(invoiceId);
+  if (reconcileError) return { ok: false, errors: {}, message: reconcileError };
+
+  revalidatePath("/dashboard/invoices");
+  revalidatePath(`/dashboard/quotes/${quote.id}`);
+  redirect(`/dashboard/invoices/${invoiceId}`);
 }

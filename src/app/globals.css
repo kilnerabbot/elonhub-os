@@ -63,3 +63,39 @@
     border-color: var(--color-border);
   }
 }
+
+/* ---------------------------------------------------------------------
+   Printable documents.
+
+   @page controls the physical sheet; Tailwind cannot express it. A4 with
+   14mm margins matches the on-screen preview in DocumentShell, so what is
+   previewed is what prints.
+   --------------------------------------------------------------------- */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff;
+    /* Preserve the accent colour and table rules; browsers strip backgrounds
+       when printing unless told otherwise. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* Keep a line item and its price on the same page. */
+  .document tr {
+    break-inside: avoid;
+  }
+
+  .document thead {
+    display: table-header-group;
+  }
+}

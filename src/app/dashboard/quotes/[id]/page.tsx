@@ -73,7 +73,17 @@ export default async function QuoteDetailPage({
             <p className="mt-1 text-[13px] text-text-faint">{quote.payment_terms}</p>
           )}
         </div>
-        {editable && <StatusForm quoteId={quote.id} status={quote.status} />}
+        <div className="flex items-center gap-3">
+          <a
+            href={`/documents/quote/${quote.id}`}
+            target="_blank"
+            rel="noopener"
+            className="rounded-lg border border-border-strong px-3.5 py-2 text-[13px] text-text transition-colors hover:bg-surface-2"
+          >
+            Download PDF
+          </a>
+          {editable && <StatusForm quoteId={quote.id} status={quote.status} />}
+        </div>
       </div>
 
       {stale && (

@@ -89,14 +89,24 @@ export default async function InvoiceDetailPage({
             {invoice.due_date ? ` · due ${invoice.due_date}` : ""}
           </p>
         </div>
-        {canManage && (
-          <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={`/documents/invoice/${invoice.id}`}
+            target="_blank"
+            rel="noopener"
+            className="rounded-lg border border-border-strong px-3.5 py-2 text-[13px] text-text transition-colors hover:bg-surface-2"
+          >
+            Download PDF
+          </a>
+          {canManage && (
+            <>
             {isEditable(invoice.status) && <IssueButton invoiceId={invoice.id} />}
             {invoice.status !== "void" && paymentRows.length === 0 && (
               <VoidButton invoiceId={invoice.id} />
             )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {stale && (
@@ -205,8 +215,16 @@ export default async function InvoiceDetailPage({
                     {p.method ? ` · ${p.method}` : ""}
                     {p.reference ? ` · ${p.reference}` : ""}
                   </span>
-                  <span className="flex-none tabular-nums text-text">
-                    {formatZAR(num(p.amount))}
+                  <span className="flex flex-none items-center gap-3">
+                    <span className="tabular-nums text-text">{formatZAR(num(p.amount))}</span>
+                    <a
+                      href={`/documents/receipt/${p.id}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-[11px] text-gold-bright hover:underline"
+                    >
+                      Receipt
+                    </a>
                   </span>
                 </li>
               ))}

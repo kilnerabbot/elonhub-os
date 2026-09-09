@@ -3,7 +3,7 @@
 import { useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
 import { moveTask } from "./actions";
-import { TASK_STATUSES } from "../projects/actions";
+import { TASK_STATUSES } from "@/lib/domain";
 
 export type BoardTask = {
   id: string;

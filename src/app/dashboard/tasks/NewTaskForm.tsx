@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Field, FormError, SelectField, Submit } from "@/components/Field";
 import type { ActionResult } from "@/lib/validate";
-import { TASK_PRIORITIES, TASK_STATUSES, createTask } from "../projects/actions";
+import { TASK_PRIORITIES, TASK_STATUSES } from "@/lib/domain";
+import { createTask } from "../projects/actions";
 
 /**
  * Create a task without opening a project first.

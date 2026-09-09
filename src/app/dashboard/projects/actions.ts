@@ -5,16 +5,13 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { canCreateProject } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
-import { nextReference } from "@/lib/domain";
+import {
+  PROJECT_STAGES,
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+  nextReference,
+} from "@/lib/domain";
 import { Validator, describeDbError, field, type ActionResult } from "@/lib/validate";
-
-export const PROJECT_STAGES = [
-  "discovery", "planning", "design", "development", "testing",
-  "client_review", "launch", "handover", "support",
-] as const;
-
-export const TASK_STATUSES = ["todo", "in_progress", "blocked", "done"] as const;
-export const TASK_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 
 const DENIED: ActionResult = {
   ok: false,

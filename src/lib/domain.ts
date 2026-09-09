@@ -18,6 +18,14 @@ export const PIPELINE_STAGES = [
   "new", "contacted", "qualified", "discovery", "proposal", "negotiation", "won", "lost",
 ] as const;
 
+export const PROJECT_STAGES = [
+  "discovery", "planning", "design", "development", "testing",
+  "client_review", "launch", "handover", "support",
+] as const;
+
+export const TASK_STATUSES = ["todo", "in_progress", "blocked", "done"] as const;
+export const TASK_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
+
 /** Stages shown as columns on the board. Won and lost are outcomes, not columns. */
 export const OPEN_STAGES = [
   "new", "contacted", "qualified", "discovery", "proposal", "negotiation",

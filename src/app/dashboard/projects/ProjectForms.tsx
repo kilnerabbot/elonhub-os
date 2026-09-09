@@ -3,10 +3,8 @@
 import { useActionState, useEffect, useRef } from "react";
 import { Field, FormError, SelectField, Submit } from "@/components/Field";
 import type { ActionResult } from "@/lib/validate";
+import { PROJECT_STAGES, TASK_PRIORITIES, TASK_STATUSES } from "@/lib/domain";
 import {
-  PROJECT_STAGES,
-  TASK_PRIORITIES,
-  TASK_STATUSES,
   createProject,
   createTask,
   logTime,

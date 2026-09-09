@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { describeDbError, type ActionResult } from "@/lib/validate";
-import { TASK_STATUSES } from "../projects/actions";
+import { TASK_STATUSES } from "@/lib/domain";
 
 /**
  * Move a task to a status.

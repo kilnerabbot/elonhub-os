@@ -64,7 +64,7 @@ const SECTIONS = [
       { href: "/dashboard/invoices", label: "Invoices", icon: ICONS.coins },
       { href: "/dashboard/payments", label: "Payments", icon: ICONS.coins },
       { href: "/dashboard/tasks", label: "Tasks", icon: ICONS.grid },
-      { href: "/dashboard/support", label: "Support", icon: ICONS.life, disabled: true },
+      { href: "/dashboard/support", label: "Support", icon: ICONS.life },
       { href: "/dashboard/team", label: "Team", icon: ICONS.shield },
     ],
   },
@@ -124,12 +124,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </div>
               <div className="flex flex-col gap-0.5">
                 {section.items.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    href={item.href}
-                    icon={item.icon}
-                    disabled={item.disabled}
-                  >
+                  <NavLink key={item.href} href={item.href} icon={item.icon}>
                     {item.label}
                   </NavLink>
                 ))}

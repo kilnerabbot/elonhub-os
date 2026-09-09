@@ -24,6 +24,8 @@ export type ProjectStage =
   | "client_review" | "launch" | "handover" | "support";
 export type TaskStatus = "todo" | "in_progress" | "blocked" | "done";
 export type InvoiceStatus = "draft" | "sent" | "partially_paid" | "paid" | "overdue" | "void";
+export type TicketStatus = "open" | "pending" | "on_hold" | "resolved" | "closed";
+export type TicketChannel = "whatsapp" | "email" | "phone" | "portal" | "in_person";
 
 export interface Database {
   public: {
@@ -368,6 +370,53 @@ export interface Database {
           amount: number;
         };
         Update: Partial<Database["public"]["Tables"]["payments"]["Row"]>;
+        Relationships: [];
+      };
+      tickets: {
+        Row: {
+          id: string;
+          org_id: string;
+          number: string;
+          customer_id: string | null;
+          project_id: string | null;
+          subject: string;
+          description: string | null;
+          status: TicketStatus;
+          priority: "low" | "medium" | "high" | "urgent";
+          channel: TicketChannel;
+          requester_name: string | null;
+          requester_email: string | null;
+          requester_phone: string | null;
+          assignee_id: string | null;
+          opened_at: string;
+          first_response_at: string | null;
+          resolved_at: string | null;
+          closed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["tickets"]["Row"]> & {
+          org_id: string;
+          number: string;
+          subject: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tickets"]["Row"]>;
+        Relationships: [];
+      };
+      ticket_messages: {
+        Row: {
+          id: string;
+          ticket_id: string;
+          author_id: string | null;
+          body: string;
+          is_internal: boolean;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["ticket_messages"]["Row"]> & {
+          ticket_id: string;
+          body: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["ticket_messages"]["Row"]>;
         Relationships: [];
       };
       audit_log: {

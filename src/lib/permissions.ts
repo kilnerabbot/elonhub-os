@@ -51,6 +51,31 @@ export function canViewPayments(role: AppRole): boolean {
   return role === "super_admin" || role === "director" || role === "finance";
 }
 
+/**
+ * tickets_write: support agents run the desk, leadership can log one.
+ * tickets_update additionally allows whoever the ticket is assigned to, since
+ * agencies reassign to whoever owns the account rather than by role.
+ */
+const TICKET_CREATE: AppRole[] = ["super_admin", "director", "support_agent"];
+
+export function canCreateTicket(role: AppRole): boolean {
+  return TICKET_CREATE.includes(role);
+}
+
+export function canWorkTicket(
+  role: AppRole,
+  assigneeId: string | null,
+  userId: string
+): boolean {
+  if (role === "super_admin" || role === "support_agent") return true;
+  return assigneeId !== null && assigneeId === userId;
+}
+
+/** tickets_select: admins, support agents, and the assignee. */
+export function canViewSupport(role: AppRole): boolean {
+  return role === "super_admin" || role === "director" || role === "support_agent";
+}
+
 /** projects_write: only super_admin and project managers open a project. */
 const PROJECT_WRITE: AppRole[] = ["super_admin", "project_manager"];
 

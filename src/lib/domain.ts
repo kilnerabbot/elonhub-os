@@ -26,6 +26,12 @@ export const PROJECT_STAGES = [
 export const TASK_STATUSES = ["todo", "in_progress", "blocked", "done"] as const;
 export const TASK_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 
+export const TICKET_STATUSES = ["open", "pending", "on_hold", "resolved", "closed"] as const;
+export const TICKET_CHANNELS = ["whatsapp", "email", "phone", "portal", "in_person"] as const;
+
+/** Columns on the support board. Closed is an archive, not a working column. */
+export const TICKET_OPEN_STATUSES = ["open", "pending", "on_hold", "resolved"] as const;
+
 /** Stages shown as columns on the board. Won and lost are outcomes, not columns. */
 export const OPEN_STAGES = [
   "new", "contacted", "qualified", "discovery", "proposal", "negotiation",

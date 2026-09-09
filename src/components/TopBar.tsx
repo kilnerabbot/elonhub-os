@@ -6,6 +6,7 @@ import { MAX_QUERY_LENGTH } from "@/lib/search";
 const TITLES: Record<string, string> = {
   "/dashboard": "Analytical Board",
   "/dashboard/team": "Team",
+  "/dashboard/account": "Your account",
   "/dashboard/search": "Search",
   "/dashboard/crm": "Customers",
   "/dashboard/crm/leads": "Leads",

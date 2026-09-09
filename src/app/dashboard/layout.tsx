@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { NavLink } from "@/components/NavLink";
@@ -106,7 +107,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </span>
         </div>
 
-        <div className="mb-6 flex items-center gap-2.5 rounded-xl bg-rail-2 px-2.5 py-2.5">
+        <Link
+          href="/dashboard/account"
+          className="mb-6 flex items-center gap-2.5 rounded-xl bg-rail-2 px-2.5 py-2.5 transition-colors hover:bg-rail-2/70"
+        >
           <span className="grid size-9 flex-none place-items-center rounded-full bg-accent/20 text-xs font-semibold text-accent">
             {initials || "—"}
           </span>
@@ -114,7 +118,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span className="block truncate text-sm font-medium">{name}</span>
             <span className="block truncate text-[11px] capitalize text-rail-dim">{role}</span>
           </span>
-        </div>
+        </Link>
 
         <nav className="flex flex-1 flex-col gap-5">
           {SECTIONS.map((section) => (

@@ -35,7 +35,7 @@ async function recomputeTotals(quoteId: string): Promise<string | null> {
     .select("quantity, unit_price, discount_pct, is_vatable")
     .eq("quote_id", quoteId);
 
-  if (error) return describeDbError(error);
+  if (error) return describeDbError(error, "recomputeTotals.selectItems");
 
   const totals = quoteTotals(
     (items ?? []).map((i) => ({
@@ -54,7 +54,7 @@ async function recomputeTotals(quoteId: string): Promise<string | null> {
     .update(totals)
     .eq("id", quoteId);
 
-  return updateError ? describeDbError(updateError) : null;
+  return updateError ? describeDbError(updateError, "recomputeTotals.updateQuote") : null;
 }
 
 export async function createQuote(
@@ -101,7 +101,7 @@ export async function createQuote(
       redirect(`/dashboard/quotes/${data.id}`);
     }
     if (error.code !== "23505") {
-      return { ok: false, errors: {}, message: describeDbError(error) };
+      return { ok: false, errors: {}, message: describeDbError(error, "createQuote.insert") };
     }
   }
 
@@ -138,7 +138,7 @@ export async function addQuoteItem(
     service_id: field(form, "service_id") || null,
   });
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "addQuoteItem.insert") };
 
   const totalsError = await recomputeTotals(quoteId);
   if (totalsError) return { ok: false, errors: {}, message: totalsError };
@@ -182,7 +182,7 @@ export async function setQuoteStatus(
     .update({ status }, { count: "exact" })
     .eq("id", quoteId);
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "setQuoteStatus.update") };
   if (count === 0) {
     return { ok: false, errors: {}, message: "That change was rejected — you do not own this quote." };
   }

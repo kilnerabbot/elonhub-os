@@ -81,7 +81,7 @@ export async function createProject(
       redirect(`/dashboard/projects/${data.id}`);
     }
     if (error.code !== "23505") {
-      return { ok: false, errors: {}, message: describeDbError(error) };
+      return { ok: false, errors: {}, message: describeDbError(error, "createProject.insert") };
     }
   }
 
@@ -108,7 +108,7 @@ export async function setProjectStage(
     .update({ stage }, { count: "exact" })
     .eq("id", projectId);
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "setProjectStage.update") };
   if (count === 0) {
     return { ok: false, errors: {}, message: "Rejected — only the project manager can do that." };
   }
@@ -149,7 +149,7 @@ export async function createTask(
     assignee_id: assigneeId || null,
   });
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "createTask.insert") };
 
   revalidatePath(`/dashboard/projects/${projectId}`);
   revalidatePath("/dashboard");
@@ -177,7 +177,7 @@ export async function setTaskStatus(
     .update({ status }, { count: "exact" })
     .eq("id", taskId);
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "setTaskStatus.update") };
   if (count === 0) {
     return {
       ok: false,
@@ -228,7 +228,7 @@ export async function logTime(
     note,
   });
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "logTime.insert") };
 
   revalidatePath(`/dashboard/projects/${projectId}`);
   return { ok: true };

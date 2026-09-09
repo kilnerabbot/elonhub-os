@@ -43,7 +43,7 @@ export async function createCustomer(
     .select("id")
     .single();
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "createCustomer.insert") };
 
   revalidatePath("/dashboard/crm");
   redirect(`/dashboard/crm/${data.id}`);
@@ -75,7 +75,7 @@ export async function createContact(
     .from("contacts")
     .insert({ ...values, customer_id: customerId, org_id: session.orgId });
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "createContact.insert") };
 
   revalidatePath(`/dashboard/crm/${customerId}`);
   return { ok: true };

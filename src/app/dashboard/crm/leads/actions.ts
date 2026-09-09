@@ -79,7 +79,7 @@ export async function createLead(
       redirect(`/dashboard/crm/leads/${data.id}`);
     }
     if (error.code !== "23505") {
-      return { ok: false, errors: {}, message: describeDbError(error) };
+      return { ok: false, errors: {}, message: describeDbError(error, "createLead.insert") };
     }
   }
 
@@ -135,7 +135,7 @@ export async function convertLead(
     .select("id")
     .single();
 
-  if (oppError) return { ok: false, errors: {}, message: describeDbError(oppError) };
+  if (oppError) return { ok: false, errors: {}, message: describeDbError(oppError, "convertLead.insertOpportunity") };
 
   const { error: leadError } = await supabase
     .from("leads")
@@ -213,7 +213,7 @@ export async function createQuoteForLead(
       .single();
 
     if (customerError) {
-      return { ok: false, errors: {}, message: describeDbError(customerError) };
+      return { ok: false, errors: {}, message: describeDbError(customerError, "quoteForLead.insertCustomer") };
     }
     customerId = customer.id;
 
@@ -273,7 +273,7 @@ export async function createQuoteForLead(
       redirect(`/dashboard/quotes/${data.id}`);
     }
     if (error.code !== "23505") {
-      return { ok: false, errors: {}, message: describeDbError(error) };
+      return { ok: false, errors: {}, message: describeDbError(error, "quoteForLead.insertQuote") };
     }
   }
 

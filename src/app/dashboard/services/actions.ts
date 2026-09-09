@@ -47,7 +47,7 @@ export async function createService(
     if (error.code === "23505") {
       return { ok: false, errors: { sku: "That SKU is already in the catalogue." } };
     }
-    return { ok: false, errors: {}, message: describeDbError(error) };
+    return { ok: false, errors: {}, message: describeDbError(error, "createService.insert") };
   }
 
   revalidatePath("/dashboard/services");

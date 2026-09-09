@@ -31,7 +31,7 @@ export async function moveOpportunity(
     .update({ stage, probability: STAGE_PROBABILITY[stage] }, { count: "exact" })
     .eq("id", id);
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "moveOpportunity.update") };
   if (count === 0) {
     return {
       ok: false,

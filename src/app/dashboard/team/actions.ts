@@ -37,7 +37,7 @@ export async function updateRole(
     .update({ role: validRole }, { count: "exact" })
     .eq("id", userId);
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error) };
+  if (error) return { ok: false, errors: {}, message: describeDbError(error, "updateRole.update") };
   if (count === 0) {
     return {
       ok: false,

@@ -76,8 +76,10 @@ export default async function InvoiceDocument({
         <>
           <div className="font-medium">Banking details</div>
           <div>
-            {BANKING.accountName} · {BANKING.bank} · Acc {BANKING.accountNumber} · Branch{" "}
-            {BANKING.branchCode}
+            {BANKING.accountName} · {BANKING.bank} · {BANKING.accountType}
+          </div>
+          <div>
+            Account {BANKING.accountNumber} · Branch {BANKING.branchCode}
           </div>
           <div className="mt-1">
             Please use {invoice.number} as your payment reference.

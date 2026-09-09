@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { canCreateOpportunity } from "@/lib/permissions";
+import { canCreateOpportunity, canCreateQuote } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui";
 import { label } from "@/lib/domain";
 import { ConvertForm } from "../ConvertForm";
+import { QuoteFromLeadForm } from "../QuoteFromLeadForm";
 
 export default async function LeadDetailPage({
   params,
@@ -17,6 +18,11 @@ export default async function LeadDetailPage({
   if (!session) redirect("/login");
 
   const supabase = await createClient();
+  const { data: customers } = await supabase
+    .from("customers")
+    .select("id, legal_name")
+    .order("legal_name")
+    .limit(200);
   const { data: lead } = await supabase
     .from("leads")
     .select(
@@ -29,6 +35,7 @@ export default async function LeadDetailPage({
 
   const converted = lead.status === "converted" || lead.converted_opportunity_id !== null;
   const canConvert = canCreateOpportunity(session.role) && !converted;
+  const canQuote = canCreateQuote(session.role);
 
   return (
     <div className="max-w-4xl p-6">
@@ -84,6 +91,18 @@ export default async function LeadDetailPage({
           </Card>
         )}
       </div>
+
+      {canQuote && (
+        <div className="mt-4">
+          <Card title="Create a quote">
+            <QuoteFromLeadForm
+              leadId={lead.id}
+              companyName={lead.company_name}
+              customers={customers ?? []}
+            />
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

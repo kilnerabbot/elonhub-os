@@ -17,11 +17,12 @@ export const COMPANY = {
 
 /** Banking details printed on invoices so a client can pay without asking. */
 export const BANKING = {
-  // ponytail: placeholders. Replace with the real account before sending any
-  // invoice to a client — an invoice with wrong banking details is worse than
-  // one with none.
-  bank: "—",
-  accountName: "Elon Hub Technologies",
-  accountNumber: "—",
-  branchCode: "—",
+  bank: "FNB / RMB",
+  accountName: "Elonhub Tech (Pty) Ltd",
+  accountType: "Gold Business Account",
+  accountNumber: "63169277944",
+  // FNB's universal branch code. It is the correct code for every FNB account
+  // and is what the bank itself tells account holders to publish, but it was
+  // not supplied directly — confirm before this reaches a client.
+  branchCode: "250655",
 } as const;

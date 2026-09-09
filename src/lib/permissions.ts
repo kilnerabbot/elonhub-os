@@ -31,6 +31,46 @@ export function canDeleteCustomer(role: AppRole): boolean {
   return CUSTOMER_DELETE.includes(role);
 }
 
+/** projects_write: only super_admin and project managers open a project. */
+const PROJECT_WRITE: AppRole[] = ["super_admin", "project_manager"];
+
+export function canCreateProject(role: AppRole): boolean {
+  return PROJECT_WRITE.includes(role);
+}
+
+/**
+ * Whether this user may change a project and add tasks to it.
+ *
+ * Mirrors projects_update and tasks_write, which both key off the project's
+ * own manager_id rather than a role — a project_manager has no authority over
+ * a project they do not manage.
+ */
+export function canManageProject(
+  role: AppRole,
+  managerId: string | null,
+  userId: string
+): boolean {
+  if (role === "super_admin") return true;
+  return managerId !== null && managerId === userId;
+}
+
+/**
+ * Whether this user may change a task's status.
+ *
+ * tasks_update is broader than tasks_write: the assignee can move their own
+ * task even though they cannot create one.
+ */
+export function canUpdateTask(
+  role: AppRole,
+  assigneeId: string | null,
+  projectManagerId: string | null,
+  userId: string
+): boolean {
+  if (role === "super_admin") return true;
+  if (assigneeId !== null && assigneeId === userId) return true;
+  return projectManagerId !== null && projectManagerId === userId;
+}
+
 /** services_write: pricing is set by sales and finance leadership only. */
 const SERVICE_WRITE: AppRole[] = ["super_admin", "sales_manager", "finance"];
 

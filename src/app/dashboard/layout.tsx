@@ -55,7 +55,7 @@ const SECTIONS = [
       { href: "/dashboard/pipeline", label: "Pipeline", icon: ICONS.coins },
       { href: "/dashboard/quotes", label: "Quotes", icon: ICONS.folder },
       { href: "/dashboard/services", label: "Catalogue", icon: ICONS.shield },
-      { href: "/dashboard/projects", label: "Projects", icon: ICONS.folder, disabled: true },
+      { href: "/dashboard/projects", label: "Projects", icon: ICONS.folder },
     ],
   },
   {

@@ -61,7 +61,7 @@ const SECTIONS = [
   {
     heading: "Operations",
     items: [
-      { href: "/dashboard/finance", label: "Finance", icon: ICONS.coins, disabled: true },
+      { href: "/dashboard/invoices", label: "Invoices", icon: ICONS.coins },
       { href: "/dashboard/support", label: "Support", icon: ICONS.life, disabled: true },
       { href: "/dashboard/team", label: "Team", icon: ICONS.shield },
     ],

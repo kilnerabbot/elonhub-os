@@ -31,6 +31,17 @@ export function canDeleteCustomer(role: AppRole): boolean {
   return CUSTOMER_DELETE.includes(role);
 }
 
+/**
+ * invoices_write, invoice_items_* and payments_write are all super_admin and
+ * finance only. Note that `director` is excluded: it reads the books but never
+ * writes to them, which is the separation the RBAC matrix intends.
+ */
+const FINANCE_WRITE: AppRole[] = ["super_admin", "finance"];
+
+export function canManageInvoices(role: AppRole): boolean {
+  return FINANCE_WRITE.includes(role);
+}
+
 /** projects_write: only super_admin and project managers open a project. */
 const PROJECT_WRITE: AppRole[] = ["super_admin", "project_manager"];
 

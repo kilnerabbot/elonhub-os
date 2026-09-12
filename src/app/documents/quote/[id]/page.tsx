@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
 import { lineNet, quoteTotals } from "@/lib/money";
+import { letterhead } from "@/lib/company";
 import { DocumentShell, LineTable, TotalsBlock } from "@/components/DocumentShell";
 
 export default async function QuoteDocument({
@@ -36,7 +37,7 @@ export default async function QuoteDocument({
       .select("legal_name, trading_name, address, vat_number")
       .eq("id", quote.customer_id)
       .maybeSingle(),
-    supabase.from("organisations").select("vat_rate, vat_number").maybeSingle(),
+    supabase.from("organisations").select("*").maybeSingle(),
   ]);
 
   const rows = items ?? [];
@@ -47,18 +48,20 @@ export default async function QuoteDocument({
     is_vatable: i.is_vatable,
   }));
   const vatRate = Number(org?.vat_rate ?? 15);
+  const head = letterhead(org);
   // Recomputed from the lines rather than read from the stored cache, so the
   // printed document can never disagree with its own line items.
   const totals = quoteTotals(lines, vatRate);
 
   return (
     <DocumentShell
+      head={head}
       title="Quotation"
       reference={quote.number}
       meta={[
         { label: "Date", value: String(quote.created_at).slice(0, 10) },
         ...(quote.valid_until ? [{ label: "Valid until", value: quote.valid_until }] : []),
-        ...(org?.vat_number ? [{ label: "Our VAT no.", value: org.vat_number }] : []),
+        ...(head.vatNumber ? [{ label: "Our VAT no.", value: head.vatNumber }] : []),
       ]}
       party={{
         heading: "Prepared for",

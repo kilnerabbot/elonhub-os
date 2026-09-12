@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
 import { lineNet, quoteTotals } from "@/lib/money";
 import { outstandingCents } from "@/lib/invoice";
-import { BANKING } from "@/lib/company";
+import { letterhead } from "@/lib/company";
 import { DocumentShell, LineTable, TotalsBlock } from "@/components/DocumentShell";
 
 export default async function InvoiceDocument({
@@ -38,7 +38,7 @@ export default async function InvoiceDocument({
         .select("legal_name, trading_name, address, vat_number")
         .eq("id", invoice.customer_id)
         .maybeSingle(),
-      supabase.from("organisations").select("vat_rate, vat_number").maybeSingle(),
+      supabase.from("organisations").select("*").maybeSingle(),
     ]);
 
   const rows = items ?? [];
@@ -49,6 +49,7 @@ export default async function InvoiceDocument({
     is_vatable: i.is_vatable,
   }));
   const vatRate = Number(org?.vat_rate ?? 15);
+  const head = letterhead(org);
   const totals = quoteTotals(lines, vatRate);
 
   const paid = (payments ?? []).reduce((a, p) => a + Number(p.amount), 0);
@@ -56,12 +57,25 @@ export default async function InvoiceDocument({
 
   return (
     <DocumentShell
+      head={head}
+      // Deliberately on screen only. The document still prints, because
+      // refusing to render it would be worse, but nobody should send one
+      // without having been told.
+      notice={
+        head.vatNumber || invoice.status === "void" ? undefined : (
+          <>
+            This prints as a <strong>Tax Invoice</strong> but no VAT number is set, so it does
+            not meet section 20(4) of the VAT Act and the client cannot claim input tax
+            against it. Set it under Settings first.
+          </>
+        )
+      }
       title={invoice.status === "void" ? "Invoice (void)" : "Tax Invoice"}
       reference={invoice.number}
       meta={[
         { label: "Date", value: String(invoice.created_at).slice(0, 10) },
         ...(invoice.due_date ? [{ label: "Due", value: invoice.due_date }] : []),
-        ...(org?.vat_number ? [{ label: "Our VAT no.", value: org.vat_number }] : []),
+        ...(head.vatNumber ? [{ label: "Our VAT no.", value: head.vatNumber }] : []),
       ]}
       party={{
         heading: "Billed to",
@@ -76,10 +90,17 @@ export default async function InvoiceDocument({
         <>
           <div className="font-medium">Banking details</div>
           <div>
-            {BANKING.accountName} · {BANKING.bank} · {BANKING.accountType}
+            {[head.bank.accountName, head.bank.name, head.bank.accountType]
+              .filter(Boolean)
+              .join(" · ")}
           </div>
           <div>
-            Account {BANKING.accountNumber} · Branch {BANKING.branchCode}
+            {[
+              head.bank.accountNumber && `Account ${head.bank.accountNumber}`,
+              head.bank.branchCode && `Branch ${head.bank.branchCode}`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </div>
           <div className="mt-1">
             Please use {invoice.number} as your payment reference.

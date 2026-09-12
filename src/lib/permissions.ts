@@ -79,6 +79,18 @@ export function canInviteMember(role: AppRole): boolean {
   return role === "super_admin";
 }
 
+/**
+ * Mirrors org_update in 0002_rls.sql, which is `auth_role() = 'super_admin'`.
+ *
+ * The organisation row is the letterhead, the VAT registration and the bank
+ * account printed on every invoice. Changing the account number is how an
+ * invoice quietly starts directing payments somewhere else, so this stays the
+ * narrowest list in the file.
+ */
+export function canEditOrganisation(role: AppRole): boolean {
+  return role === "super_admin";
+}
+
 /** tickets_select: admins, support agents, and the assignee. */
 export function canViewSupport(role: AppRole): boolean {
   return role === "super_admin" || role === "director" || role === "support_agent";

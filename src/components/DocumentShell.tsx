@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { COMPANY } from "@/lib/company";
+import type { Letterhead } from "@/lib/company";
 import { PrintButton } from "./PrintButton";
 
 /**
@@ -9,19 +9,28 @@ import { PrintButton } from "./PrintButton";
  * toolbar is marked `no-print` so it never appears in the output.
  */
 export function DocumentShell({
+  head,
   title,
   reference,
   meta,
   party,
   children,
   footer,
+  notice,
 }: {
+  /** The organisation's own details, already merged with the fallbacks in
+   *  src/lib/company.ts. Passed in rather than read here so the page makes one
+   *  organisation query instead of the shell making a second. */
+  head: Letterhead;
   title: string;
   reference: string;
   meta: { label: string; value: string }[];
   party: { heading: string; lines: string[] };
   children: ReactNode;
   footer?: ReactNode;
+  /** Shown above the page and never printed. For telling whoever is about to
+   *  send this that the document has a problem. */
+  notice?: ReactNode;
 }) {
   return (
     <div className="min-h-screen bg-bg py-6 print:bg-white print:py-0">
@@ -32,17 +41,27 @@ export function DocumentShell({
         <PrintButton />
       </div>
 
+      {notice && (
+        <div
+          role="alert"
+          className="no-print mx-auto mb-4 w-[210mm] max-w-[95vw] rounded-lg border border-danger/30 bg-danger-soft px-3 py-2.5 text-[13px] text-danger"
+        >
+          {notice}
+        </div>
+      )}
+
       <article className="document mx-auto w-[210mm] max-w-[95vw] bg-white p-[16mm] text-[#171715] shadow-sm print:w-auto print:max-w-none print:p-0 print:shadow-none">
         <header className="flex items-start justify-between gap-8 border-b border-[#e2ded4] pb-6">
           <div>
-            <div className="text-lg font-semibold tracking-tight">{COMPANY.name}</div>
+            <div className="text-lg font-semibold tracking-tight">{head.name}</div>
             <div className="mt-1 text-[11px] leading-relaxed text-[#6b675e]">
-              {COMPANY.addressLines.map((l) => (
-                <div key={l}>{l}</div>
+              {head.addressLines.map((l, i) => (
+                <div key={i}>{l}</div>
               ))}
-              <div className="mt-1">
-                {COMPANY.phone} · {COMPANY.email}
-              </div>
+              {[head.phone, head.email].filter(Boolean).length > 0 && (
+                <div className="mt-1">{[head.phone, head.email].filter(Boolean).join(" · ")}</div>
+              )}
+              {head.registrationNumber && <div>Reg. {head.registrationNumber}</div>}
             </div>
           </div>
           <div className="text-right">
@@ -81,7 +100,7 @@ export function DocumentShell({
         <footer className="mt-10 border-t border-[#e2ded4] pt-4 text-[10px] leading-relaxed text-[#6b675e]">
           {footer}
           <div className="mt-2">
-            {COMPANY.name} · {COMPANY.website} · {COMPANY.email}
+            {[head.name, head.website, head.email].filter(Boolean).join(" · ")}
           </div>
         </footer>
       </article>

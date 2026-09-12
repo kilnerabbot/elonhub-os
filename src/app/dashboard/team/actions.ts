@@ -41,7 +41,9 @@ export async function updateRole(
     .eq("id", userId);
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "updateRole.update") };
-  if (count === 0) {
+  // Not `count === 0`: supabase-js types count as `number | null`, and a null
+  // would fall through and report a rejected write as a successful one.
+  if (count !== 1) {
     return {
       ok: false,
       errors: {},

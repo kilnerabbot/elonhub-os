@@ -20,6 +20,7 @@ const TITLES: Record<string, string> = {
   "/dashboard/payments": "Payments",
   "/dashboard/tasks": "Tasks",
   "/dashboard/support": "Support",
+  "/dashboard/settings": "Company details",
 };
 
 export function TopBar() {

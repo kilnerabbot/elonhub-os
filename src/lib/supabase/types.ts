@@ -42,6 +42,22 @@ export interface Database {
           currency: string;
           vat_rate: number;
           created_at: string;
+          // Added by migration 0009, and OPTIONAL on purpose. Every document
+          // reads the organisation with select(*) and falls back to
+          // src/lib/company.ts, so a row read before 0009 is applied simply
+          // does not carry these keys. Declaring them as always present would
+          // let the compiler bless `.select("bank_name")`, which returns 42703
+          // against an un-migrated database and takes every document down.
+          registration_number?: string | null;
+          address?: string | null;
+          phone?: string | null;
+          email?: string | null;
+          website?: string | null;
+          bank_name?: string | null;
+          bank_account_name?: string | null;
+          bank_account_type?: string | null;
+          bank_account_number?: string | null;
+          bank_branch_code?: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["organisations"]["Row"]> & { name: string };
         Update: Partial<Database["public"]["Tables"]["organisations"]["Row"]>;

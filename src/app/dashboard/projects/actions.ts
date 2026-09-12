@@ -106,7 +106,9 @@ export async function setProjectStage(
     .eq("id", projectId);
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "setProjectStage.update") };
-  if (count === 0) {
+  // Not `count === 0`: supabase-js types count as `number | null`, and a null
+  // would fall through and report a rejected write as a successful one.
+  if (count !== 1) {
     return { ok: false, errors: {}, message: "Rejected — only the project manager can do that." };
   }
 
@@ -176,7 +178,9 @@ export async function setTaskStatus(
     .eq("id", taskId);
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "setTaskStatus.update") };
-  if (count === 0) {
+  // Not `count === 0`: supabase-js types count as `number | null`, and a null
+  // would fall through and report a rejected write as a successful one.
+  if (count !== 1) {
     return {
       ok: false,
       errors: {},

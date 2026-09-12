@@ -67,6 +67,7 @@ const SECTIONS = [
       { href: "/dashboard/tasks", label: "Tasks", icon: ICONS.grid },
       { href: "/dashboard/support", label: "Support", icon: ICONS.life },
       { href: "/dashboard/team", label: "Team", icon: ICONS.shield },
+      { href: "/dashboard/settings", label: "Settings", icon: ICONS.grid },
     ],
   },
 ];

@@ -32,6 +32,20 @@ that's Phase 2. The schema for all of it already exists.
    CLI linked to the project).
 3. `npm install && npm run dev`
 4. Sign up at `/signup` — the first account becomes `super_admin`.
+5. Sign in and open **Settings** to set the VAT number, letterhead and
+   banking details. Until a VAT number is saved, every document titled
+   "Tax Invoice" prints without one and is not valid under section 20(4)
+   of the VAT Act. Migration `0009_org_identity.sql` adds those columns;
+   until it is applied the app falls back to the constants in
+   `src/lib/company.ts` and the Settings form reports what is missing.
+
+## Verifying a release
+
+`npm test` and `npx next build` stop at the database and the server/client
+boundary — every production failure found so far was invisible to both.
+`docs/END_TO_END_WALKTHROUGH.md` walks lead to receipt against real data with
+the exact figures each step should produce. Run it after any change to money,
+quoting, invoicing or payments.
 
 ## Stack
 

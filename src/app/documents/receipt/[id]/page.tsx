@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
 import { quoteTotals } from "@/lib/money";
 import { outstandingCents } from "@/lib/invoice";
+import { letterhead } from "@/lib/company";
 import { DocumentShell, LineTable, TotalsBlock } from "@/components/DocumentShell";
 
 /**
@@ -55,10 +56,11 @@ export default async function ReceiptDocument({
         .select("legal_name, trading_name, address, vat_number")
         .eq("id", invoice.customer_id)
         .maybeSingle(),
-      supabase.from("organisations").select("vat_rate, vat_number").maybeSingle(),
+      supabase.from("organisations").select("*").maybeSingle(),
     ]);
 
   const vatRate = Number(org?.vat_rate ?? 15);
+  const head = letterhead(org);
   const totals = quoteTotals(
     (items ?? []).map((i) => ({
       quantity: Number(i.quantity),
@@ -79,12 +81,13 @@ export default async function ReceiptDocument({
 
   return (
     <DocumentShell
+      head={head}
       title="Receipt"
       reference={receiptNumber}
       meta={[
         { label: "Received", value: String(payment.paid_at).slice(0, 10) },
         { label: "Invoice", value: invoice.number },
-        ...(org?.vat_number ? [{ label: "Our VAT no.", value: org.vat_number }] : []),
+        ...(head.vatNumber ? [{ label: "Our VAT no.", value: head.vatNumber }] : []),
       ]}
       party={{
         heading: "Received from",

@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
-import { lineNet, quoteTotals } from "@/lib/money";
+import { lineNet, quoteTotals, resolveVatRate } from "@/lib/money";
 import { outstandingCents } from "@/lib/invoice";
 import { letterhead } from "@/lib/company";
 import { DocumentShell, LineTable, TotalsBlock } from "@/components/DocumentShell";
@@ -19,7 +19,7 @@ export default async function InvoiceDocument({
   const supabase = await createClient();
   const { data: invoice } = await supabase
     .from("invoices")
-    .select("id, number, status, due_date, created_at, customer_id")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
 
@@ -48,7 +48,7 @@ export default async function InvoiceDocument({
     discount_pct: 0,
     is_vatable: i.is_vatable,
   }));
-  const vatRate = Number(org?.vat_rate ?? 15);
+  const vatRate = resolveVatRate(invoice.vat_rate, org?.vat_rate);
   const head = letterhead(org);
   const totals = quoteTotals(lines, vatRate);
 

@@ -12,7 +12,7 @@ import {
   normaliseDigits,
   stripControl,
 } from "@/lib/company";
-import { Validator, describeDbError, type ActionResult } from "@/lib/validate";
+import { Validator, describeDbError, field, type ActionResult } from "@/lib/validate";
 
 /**
  * Update the organisation's letterhead, VAT registration and banking details.
@@ -22,11 +22,9 @@ import { Validator, describeDbError, type ActionResult } from "@/lib/validate";
  * in src/lib/company.ts, because a "use server" module may export only async
  * functions and nothing defined in one can be reached by a test.
  *
- * `vat_rate` is deliberately NOT editable here. Documents recompute their
- * totals from line items using the organisation's current rate, so changing it
- * would silently reprint invoices that were already issued and sent at the old
- * rate. Making it editable needs the rate snapshotted onto the invoice row
- * first; until then the rate is changed in SQL, consciously.
+ * `vat_rate` is not part of this patch — it has its own action below, because
+ * changing what documents charge is a different kind of change from changing
+ * how they look, and a save here should not be able to touch it.
  *
  * ponytail: every save rewrites all twelve columns, so two people editing at
  * once silently overwrite each other. Fine for one super admin; revisit with a
@@ -159,5 +157,68 @@ export async function updateOrganisation(
   // becomes load-bearing the moment anyone adds `revalidate` to those routes.
   revalidatePath("/dashboard/settings", "page");
   revalidatePath("/documents", "layout");
+  return { ok: true };
+}
+
+/**
+ * Change the organisation's VAT rate.
+ *
+ * Separate from updateOrganisation because it is a different kind of change:
+ * the letterhead is how documents look, this is what they charge.
+ *
+ * Safe to expose only because migration 0010 records the rate on each quote
+ * and invoice as it is raised, so this sets the figure for future documents
+ * rather than restating issued ones. The Settings page probes for that column
+ * and keeps the field locked where the migration has not been applied — but
+ * the probe is a UI courtesy, so the same reasoning is repeated here rather
+ * than assumed.
+ */
+export async function updateVatRate(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (!canEditOrganisation(session.role)) {
+    return { ok: false, errors: {}, message: "Only a super admin can change the VAT rate." };
+  }
+
+  const raw = field(formData, "vat_rate").replace(/[\s%]/g, "");
+  if (!raw) {
+    // Not defaulted. A blank field silently becoming 0% would zero-rate every
+    // future invoice, and nothing downstream would look wrong until SARS did.
+    return { ok: false, errors: { vat_rate: "A VAT rate is required." } };
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
+    return {
+      ok: false,
+      errors: { vat_rate: "A VAT rate is a percentage between 0 and 100." },
+    };
+  }
+
+  // numeric(5,2) in the database; rounding here means the stored figure is the
+  // one that was typed rather than one Postgres quietly rounded.
+  const vatRate = Math.round(parsed * 100) / 100;
+
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("organisations")
+    .update({ vat_rate: vatRate }, { count: "exact" })
+    .eq("id", session.orgId);
+
+  if (error) {
+    return { ok: false, errors: {}, message: describeDbError(error, "updateVatRate.update") };
+  }
+  if (count !== 1) {
+    return {
+      ok: false,
+      errors: {},
+      message: "That change was rejected. Only a super admin can edit the company details.",
+    };
+  }
+
+  revalidatePath("/dashboard/settings", "page");
   return { ok: true };
 }

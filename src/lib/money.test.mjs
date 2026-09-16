@@ -2,7 +2,14 @@
 // The money path. If these fail, quotes and invoices are wrong and clients
 // will dispute them.
 import assert from "node:assert/strict";
-import { lineNet, lineNetCents, quoteTotals, toCents } from "./money.ts";
+import {
+  DEFAULT_VAT_RATE,
+  lineNet,
+  lineNetCents,
+  quoteTotals,
+  resolveVatRate,
+  toCents,
+} from "./money.ts";
 
 const line = (o) => ({
   quantity: 1,
@@ -124,3 +131,40 @@ assert.equal(
 assert.equal(lineNetCents(line({ quantity: 1, unit_price: 0 })), 0, "zero price is free, not NaN");
 
 console.log("money: all assertions passed");
+
+/* ---- which rate a document is calculated at ---- */
+{
+  // A document's own rate wins, so reprinting an old invoice after a rate
+  // change shows what the client was actually billed.
+  assert.equal(resolveVatRate(14, 15), 14, "the document's own rate wins");
+  assert.equal(resolveVatRate(null, 15), 15, "a row written before 0010 falls back to the org");
+  assert.equal(resolveVatRate(undefined, 15), 15, "an absent column is the same as null");
+  assert.equal(resolveVatRate(null, null), DEFAULT_VAT_RATE, "last resort is the statutory rate");
+
+  // The case a `||` coalesce gets wrong. Zero-rated supplies and exports are
+  // charged at 0%, which is not the same as a non-vatable line — billing 15%
+  // on an export is a real invoice someone has to reissue.
+  assert.equal(resolveVatRate(0, 15), 0, "zero is a rate, not a missing value");
+  assert.equal(resolveVatRate(null, 0), 0);
+
+  // PostgREST can hand numeric back as a string.
+  assert.equal(resolveVatRate("15.00", null), 15);
+  assert.equal(resolveVatRate("0", 15), 0);
+
+  // Nonsense falls through rather than producing a nonsense invoice.
+  assert.equal(resolveVatRate("abc", 15), 15, "an unparseable rate is not a rate");
+  assert.equal(resolveVatRate(-1, 15), 15, "a negative rate is not a rate");
+  assert.equal(resolveVatRate(120, 15), 15, "120% is not a rate");
+  assert.equal(resolveVatRate("", 15), 15);
+  // Number(" ") is 0. A whitespace rate must not zero-rate every document.
+  assert.equal(resolveVatRate(" ", 15), 15, "whitespace is not a zero rate");
+  assert.equal(resolveVatRate("\t\n", 15), 15);
+  assert.equal(resolveVatRate(" ", null), DEFAULT_VAT_RATE);
+
+  // And the rate actually reaches the arithmetic.
+  const lines = [{ quantity: 1, unit_price: 100, discount_pct: 0, is_vatable: true }];
+  assert.equal(quoteTotals(lines, resolveVatRate(0, 15)).total, 100, "zero-rated bills no VAT");
+  assert.equal(quoteTotals(lines, resolveVatRate(14, 15)).total, 114);
+}
+
+console.log("money: vat rate resolution passed");

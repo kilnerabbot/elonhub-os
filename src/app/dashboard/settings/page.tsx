@@ -3,9 +3,11 @@ import { getSession } from "@/lib/auth";
 import { canEditOrganisation } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { BANKING, letterhead } from "@/lib/company";
+import { resolveVatRate } from "@/lib/money";
 import { describeDbError } from "@/lib/validate";
 import { Card } from "@/components/ui";
 import { SettingsForm } from "./SettingsForm";
+import { VatRateForm } from "./VatRateForm";
 
 export default async function SettingsPage() {
   const session = await getSession();
@@ -48,7 +50,30 @@ export default async function SettingsPage() {
 
   const head = letterhead(org);
   const editable = canEditOrganisation(session.role);
-  const vatRate = Number(org.vat_rate ?? 15);
+  const vatRate = resolveVatRate(org.vat_rate, null);
+
+  // Whether the rate can safely be changed depends on migration 0010, which
+  // records the rate on each quote and invoice as it is raised. Without it,
+  // every document — including ones already issued and sent — is recomputed at
+  // whatever the organisation's rate currently is, so editing the rate here
+  // would rewrite history rather than set a going-forward figure.
+  //
+  // The check asks about the TRIGGERS, not the column. A column without its
+  // triggers is reachable — a hand-run alter table, a dump restored with
+  // triggers disabled, a later drop trigger — and in that state new documents
+  // are stamped with nothing, the fallback goes to the live rate, and the bug
+  // is fully back while this screen promises it cannot be. Failing closed on
+  // any error is deliberate; being specific about WHY is what stops someone
+  // being sent to re-run a migration that already ran.
+  const { data: snapshotReady, error: probeError } = await supabase.rpc(
+    "vat_rate_snapshot_ready"
+  );
+  const migrationMissing =
+    probeError?.code === "42883" || probeError?.code === "PGRST202" || snapshotReady === false;
+  if (probeError && !migrationMissing) {
+    describeDbError(probeError, "settingsPage.vatRateSnapshotProbe");
+  }
+  const rateEditable = editable && !probeError && snapshotReady === true;
 
   return (
     <div className="flex max-w-4xl flex-col gap-4 p-6">
@@ -117,17 +142,31 @@ export default async function SettingsPage() {
       </Card>
 
       <Card title="VAT rate">
-        <dl className="flex flex-col gap-2 text-[13px]">
-          <Row label="Rate" value={`${vatRate}%`} />
-          <Row label="Currency" value={String(org?.currency ?? "ZAR")} />
-        </dl>
-        <p className="mt-4 text-[11px] leading-relaxed text-text-faint">
-          Not editable here, deliberately. Documents recompute their totals from the line
-          items using this rate, so changing it would also change invoices that were issued
-          and sent at the old one — the client&rsquo;s copy and yours would stop matching. A
-          rate change needs the rate recorded on each invoice first. Until then, change it in
-          SQL when the rate actually changes, and reissue anything still open.
-        </p>
+        {rateEditable ? (
+          <>
+            <VatRateForm defaultValue={String(vatRate)} />
+            <p className="mt-4 text-[11px] leading-relaxed text-text-faint">
+              This applies to quotes and invoices raised from now on. Existing documents keep
+              the rate they were raised at, and an invoice converted from a quote is billed at
+              the quote&rsquo;s rate — so changing this can never restate something a client
+              has already been sent. Currency is {String(org.currency ?? "ZAR")}.
+            </p>
+          </>
+        ) : (
+          <>
+            <dl className="flex flex-col gap-2 text-[13px]">
+              <Row label="Rate" value={`${vatRate}%`} />
+              <Row label="Currency" value={String(org.currency ?? "ZAR")} />
+            </dl>
+            <p className="mt-4 text-[11px] leading-relaxed text-text-faint">
+              {!editable
+                ? "Only a super admin can change the VAT rate."
+                : migrationMissing
+                  ? "Locked until migration 0010_vat_rate_snapshot.sql is applied. Until each quote and invoice records the rate it was raised at, changing this figure would recompute documents that were already issued and sent — the client's copy and yours would stop matching."
+                  : "Locked: the VAT rate safeguards could not be verified just now. This fails closed on purpose. Try again, and if it persists check the server logs for [db] settingsPage.vatRateSnapshotProbe."}
+            </p>
+          </>
+        )}
       </Card>
     </div>
   );

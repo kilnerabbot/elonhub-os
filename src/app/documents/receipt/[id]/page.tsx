@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
-import { quoteTotals } from "@/lib/money";
+import { quoteTotals, resolveVatRate } from "@/lib/money";
 import { outstandingCents } from "@/lib/invoice";
 import { letterhead } from "@/lib/company";
 import { DocumentShell, LineTable, TotalsBlock } from "@/components/DocumentShell";
@@ -34,7 +34,7 @@ export default async function ReceiptDocument({
 
   const { data: invoice } = await supabase
     .from("invoices")
-    .select("id, number, customer_id, due_date")
+    .select("*")
     .eq("id", payment.invoice_id)
     .maybeSingle();
 
@@ -59,7 +59,9 @@ export default async function ReceiptDocument({
       supabase.from("organisations").select("*").maybeSingle(),
     ]);
 
-  const vatRate = Number(org?.vat_rate ?? 15);
+  // The invoice's own rate: a receipt restates the invoice it settles, so
+  // it must show the figures that invoice was raised at.
+  const vatRate = resolveVatRate(invoice.vat_rate, org?.vat_rate);
   const head = letterhead(org);
   const totals = quoteTotals(
     (items ?? []).map((i) => ({

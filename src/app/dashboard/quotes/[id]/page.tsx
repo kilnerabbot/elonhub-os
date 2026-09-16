@@ -5,7 +5,7 @@ import { canEditQuote, canManageInvoices } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
 import { num } from "@/lib/metrics";
-import { lineNet, quoteTotals } from "@/lib/money";
+import { lineNet, quoteTotals, resolveVatRate } from "@/lib/money";
 import { Card } from "@/components/ui";
 import { AddItemForm, StatusForm } from "../QuoteForms";
 import { ConvertToInvoiceForm } from "../ConvertToInvoiceForm";
@@ -23,7 +23,7 @@ export default async function QuoteDetailPage({
   const supabase = await createClient();
   const { data: quote } = await supabase
     .from("quotes")
-    .select("id, number, status, subtotal, vat_amount, total, payment_terms, valid_until, customer_id, owner_id")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
 
@@ -53,7 +53,12 @@ export default async function QuoteDetailPage({
   // The stored figures are a cache; if a write ever failed halfway, the quote
   // would quietly disagree with its own line items, and that is exactly the
   // discrepancy a client finds first.
-  const computed = quoteTotals(lines, Number(org?.vat_rate ?? 15));
+  const vatRate = resolveVatRate(quote.vat_rate, org?.vat_rate);
+  // The organisation's rate today, for comparison against the rate this quote
+  // was raised at. Null when it cannot be read, which suppresses the warning
+  // rather than claiming a difference that may not exist.
+  const orgRate = org?.vat_rate == null ? null : resolveVatRate(org.vat_rate, null);
+  const computed = quoteTotals(lines, vatRate);
   const stale = Math.abs(computed.total - num(quote.total)) >= 0.01;
 
   const editable = canEditQuote(session.role, quote.owner_id, session.userId);
@@ -171,7 +176,7 @@ export default async function QuoteDetailPage({
           <dl className="mt-4 flex flex-col gap-1.5 border-t border-border pt-4 text-sm">
             <Total label="Subtotal" value={formatZAR(computed.subtotal)} />
             <Total
-              label={`VAT (${Number(org?.vat_rate ?? 15)}%)`}
+              label={`VAT (${vatRate}%)`}
               value={formatZAR(computed.vat_amount)}
             />
             <Total label="Total" value={formatZAR(computed.total)} strong />
@@ -182,6 +187,16 @@ export default async function QuoteDetailPage({
       {canInvoice && lines.length > 0 && (
         <div className="mt-4">
           <Card title="Convert to invoice">
+            {orgRate !== null && orgRate !== vatRate && (
+              <p
+                role="alert"
+                className="mb-4 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-[13px] text-danger"
+              >
+                This quote was raised at {vatRate}% VAT, but the current rate is {orgRate}%.
+                The invoice will be issued at {orgRate}%, which is the rate in force at the
+                time of supply, so its total will not match this quote.
+              </p>
+            )}
             <ConvertToInvoiceForm quoteId={quote.id} existingInvoice={existingInvoice} />
           </Card>
         </div>

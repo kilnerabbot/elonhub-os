@@ -25,7 +25,7 @@ super admin.
 
 | Check | How | If it fails |
 | --- | --- | --- |
-| Migrations 0006–0009 applied | Run the SQL in 0.1 | Apply them in the Supabase SQL editor, in order |
+| Migrations 0006–0010 applied | Run the SQL in 0.1 | Apply them in the Supabase SQL editor, in order |
 | `SUPABASE_SERVICE_ROLE_KEY` set in Vercel | Team, Add member renders without an env warning | Add it **unprefixed**, then redeploy |
 | VAT number set | `/dashboard/settings` shows no red banner | Do step 1 first — it is a hard gate for step 11 |
 
@@ -40,11 +40,16 @@ select column_name from information_schema.columns
   where table_name = 'payments' and column_name = 'proof_path';
 select column_name from information_schema.columns
   where table_name = 'organisations' and column_name = 'bank_branch_code';
+select column_name from information_schema.columns
+  where table_name = 'invoices' and column_name = 'vat_rate';
 ```
 
-The last row is migration 0009. If it returns nothing, `/dashboard/settings`
-will still load and documents still print — they fall back to the constants in
-`src/lib/company.ts` — but saving will tell you to apply 0009.
+The last two rows are migrations 0009 and 0010. Neither is required for the
+app to run — that is deliberate. Without 0009, `/dashboard/settings` still
+loads and documents still print from the constants in `src/lib/company.ts`,
+but saving will tell you to apply it. Without 0010, quotes and invoices are
+still created normally; only the VAT rate field stays locked, because a rate
+change is unsafe until each document records the rate it was raised at.
 
 ---
 
@@ -270,6 +275,43 @@ Open the printable invoice.
 
 ---
 
+## 11a. A rate change must not rewrite history
+
+Skip this if migration 0010 is not applied — the field will be locked, which
+is itself the correct behaviour and worth confirming.
+
+1. Note the invoice total: **R51 227.03**, VAT **R6 655.83** at 15%.
+2. Settings, VAT rate, change it to **14** and save.
+3. Reopen the printable invoice from step 11.
+
+**Expect: nothing about it has changed.** Still `VAT (15%)`, still
+**R6 655.83**, still **R51 227.03**.
+
+4. Now record another payment against it, or edit any line item on a draft.
+   Reopen it again. **Still unchanged.**
+5. Raise a brand-new quote with a single R100 vatable line.
+   **Expect R114.00** — the new rate applies to new documents.
+6. Set the rate back to **15**.
+
+> This is the whole point of the change. Before it, the totals were recomputed
+> from line items at whatever the organisation's rate currently was — and
+> `reconcile()` and `recomputeTotals()` do not merely display that figure, they
+> **write it back to the row**. So step 4 was the real damage: recording a
+> payment against an old invoice restated its stored financial record at
+> today's rate. Step 5 confirms the new rate is not being ignored altogether.
+>
+> If the invoice in step 3 shows 14%, migration 0010's backfill did not run and
+> the invoice has no rate of its own to fall back on.
+>
+> Note what an invoice is stamped with: the rate in force when it LEAVES DRAFT,
+> not the rate its quote was raised at. VAT is charged at the time of supply
+> (VAT Act s9), so an invoice issued after a rate rise is a supply at the new
+> rate — billing the quote's older rate would under-declare output tax and
+> leave the difference owing to SARS. The quote screen warns before you convert
+> when the two differ, so the change in total is never a surprise.
+
+---
+
 ## 12. Clean up
 
 Delete the walkthrough customer, or rename it `ARCHIVE — walkthrough`, so the
@@ -295,6 +337,7 @@ dashboard is not skewed by a R51k invoice that was never real.
 | 9 Proof upload and rejections | | |
 | 10 Receipt | | |
 | 11 VAT number on tax invoice | | |
+| 11a Rate change leaves old documents alone | | |
 
 Anything that fails: capture the **exact** on-screen message. Unrecognised
 database errors now name their SQLSTATE, and every one is logged server-side

@@ -264,6 +264,12 @@ export interface Database {
           owner_id: string | null;
           created_at: string;
           updated_at: string;
+          // Added by migration 0010, OPTIONAL for the same reason as the
+          // organisations columns: a row read before 0010 is applied does not
+          // carry it, and resolveVatRate() falls back to the org rate. The
+          // rate a document was raised at, so a later change to the
+          // organisation's rate cannot restate it.
+          vat_rate?: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["quotes"]["Row"]> & {
           org_id: string;
@@ -359,6 +365,12 @@ export interface Database {
           due_date: string | null;
           created_at: string;
           updated_at: string;
+          // Added by migration 0010, OPTIONAL for the same reason as the
+          // organisations columns: a row read before 0010 is applied does not
+          // carry it, and resolveVatRate() falls back to the org rate. The
+          // rate a document was raised at, so a later change to the
+          // organisation's rate cannot restate it.
+          vat_rate?: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["invoices"]["Row"]> & {
           org_id: string;

@@ -5,7 +5,7 @@ import { canManageInvoices } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
 import { num } from "@/lib/metrics";
-import { lineNet, quoteTotals } from "@/lib/money";
+import { lineNet, quoteTotals, resolveVatRate } from "@/lib/money";
 import { isEditable, outstandingCents } from "@/lib/invoice";
 import { Card } from "@/components/ui";
 import { label } from "@/lib/domain";
@@ -29,7 +29,7 @@ export default async function InvoiceDetailPage({
   const supabase = await createClient();
   const { data: invoice } = await supabase
     .from("invoices")
-    .select("id, number, status, subtotal, vat_amount, total, due_date, customer_id, quote_id")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
 
@@ -53,7 +53,7 @@ export default async function InvoiceDetailPage({
 
   const itemRows = items ?? [];
   const paymentRows = payments ?? [];
-  const vatRate = Number(org?.vat_rate ?? 15);
+  const vatRate = resolveVatRate(invoice.vat_rate, org?.vat_rate);
 
   const lines = itemRows.map((i) => ({
     quantity: Number(i.quantity),

@@ -6,7 +6,7 @@ import { getSession } from "@/lib/auth";
 import { canCreateQuote } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { nextReference } from "@/lib/domain";
-import { quoteTotals } from "@/lib/money";
+import { quoteTotals, resolveVatRate } from "@/lib/money";
 import { Validator, describeDbError, field, type ActionResult } from "@/lib/validate";
 
 const QUOTE_STATUSES = ["draft", "sent", "viewed", "accepted", "rejected", "expired"] as const;
@@ -29,7 +29,19 @@ const DENIED: ActionResult = {
 async function recomputeTotals(quoteId: string): Promise<string | null> {
   const supabase = await createClient();
 
-  const { data: org } = await supabase.from("organisations").select("vat_rate").maybeSingle();
+  // select("*") on the quote so vat_rate comes along where migration 0010 has
+  // been applied, without naming a column that returns 42703 where it has not.
+  const [{ data: quote, error: quoteError }, { data: org }] = await Promise.all([
+    supabase.from("quotes").select("*").eq("id", quoteId).maybeSingle(),
+    supabase.from("organisations").select("vat_rate").maybeSingle(),
+  ]);
+
+  // Checked, not optional-chained away. This function WRITES the totals it
+  // computes, so falling back to the organisation's live rate because the
+  // quote could not be read is the exact restatement bug this whole change
+  // exists to prevent — reintroduced on a branch nobody would ever see.
+  if (quoteError) return describeDbError(quoteError, "recomputeTotals.selectQuote");
+  if (!quote) return "That quote could not be found, or your role cannot see it.";
   const { data: items, error } = await supabase
     .from("quote_items")
     .select("quantity, unit_price, discount_pct, is_vatable")
@@ -44,9 +56,10 @@ async function recomputeTotals(quoteId: string): Promise<string | null> {
       discount_pct: Number(i.discount_pct),
       is_vatable: i.is_vatable,
     })),
-    // Falls back to South Africa's standard rate only if the org row is
-    // unreadable; the seeded organisation sets it explicitly.
-    Number(org?.vat_rate ?? 15)
+    // The quote's own rate. This function WRITES the totals back, so reading
+    // the organisation's live rate here is what allowed a later edit to a
+    // quote to restate it at a rate the client never saw.
+    resolveVatRate(quote.vat_rate, org?.vat_rate)
   );
 
   const { error: updateError } = await supabase

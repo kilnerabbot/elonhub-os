@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatZAR } from "@/lib/format";
-import { lineNet, quoteTotals } from "@/lib/money";
+import { lineNet, quoteTotals, resolveVatRate } from "@/lib/money";
 import { letterhead } from "@/lib/company";
 import { DocumentShell, LineTable, TotalsBlock } from "@/components/DocumentShell";
 
@@ -20,7 +20,7 @@ export default async function QuoteDocument({
   // used to read a quote the signed-in user could not otherwise open.
   const { data: quote } = await supabase
     .from("quotes")
-    .select("id, number, status, payment_terms, valid_until, created_at, customer_id")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
 
@@ -47,7 +47,7 @@ export default async function QuoteDocument({
     discount_pct: Number(i.discount_pct),
     is_vatable: i.is_vatable,
   }));
-  const vatRate = Number(org?.vat_rate ?? 15);
+  const vatRate = resolveVatRate(quote.vat_rate, org?.vat_rate);
   const head = letterhead(org);
   // Recomputed from the lines rather than read from the stored cache, so the
   // printed document can never disagree with its own line items.

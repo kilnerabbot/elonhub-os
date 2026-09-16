@@ -38,6 +38,10 @@ that's Phase 2. The schema for all of it already exists.
    of the VAT Act. Migration `0009_org_identity.sql` adds those columns;
    until it is applied the app falls back to the constants in
    `src/lib/company.ts` and the Settings form reports what is missing.
+6. Migration `0010_vat_rate_snapshot.sql` records the VAT rate on each
+   quote and invoice, so changing the rate later cannot restate documents
+   already issued. Until it is applied the VAT rate field stays locked —
+   everything else works unchanged.
 
 ## Verifying a release
 

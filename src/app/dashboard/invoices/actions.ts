@@ -6,7 +6,7 @@ import { getSession } from "@/lib/auth";
 import { canManageInvoices } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { nextReference } from "@/lib/domain";
-import { quoteTotals, toCents } from "@/lib/money";
+import { quoteTotals, resolveVatRate, toCents } from "@/lib/money";
 import { toInvoiceLines } from "@/lib/quoteToInvoice";
 import { deriveStatus, isEditable, outstandingCents } from "@/lib/invoice";
 import { Validator, describeDbError, field, type ActionResult } from "@/lib/validate";
@@ -37,7 +37,7 @@ async function reconcile(invoiceId: string): Promise<string | null> {
 
   const [{ data: invoice }, { data: items }, { data: payments }, { data: org }] =
     await Promise.all([
-      supabase.from("invoices").select("status, due_date").eq("id", invoiceId).maybeSingle(),
+      supabase.from("invoices").select("*").eq("id", invoiceId).maybeSingle(),
       supabase
         .from("invoice_items")
         .select("quantity, unit_price, is_vatable")
@@ -57,7 +57,10 @@ async function reconcile(invoiceId: string): Promise<string | null> {
       discount_pct: 0,
       is_vatable: i.is_vatable,
     })),
-    Number(org?.vat_rate ?? 15)
+    // The invoice's own rate, not the organisation's current one. This
+    // function WRITES the result back, so reading the live rate here is what
+    // let a later payment restate an already-issued invoice.
+    resolveVatRate(invoice.vat_rate, org?.vat_rate)
   );
 
   const paid = (payments ?? []).reduce((a, p) => a + Number(p.amount), 0);

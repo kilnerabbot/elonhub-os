@@ -127,3 +127,40 @@ export function quoteTotals(lines: QuoteLine[], vatRatePct: number): Totals {
     total: toRand(Number(subtotalCents + vatCents)),
   };
 }
+
+/** South Africa's standard rate. The last resort, not the usual answer. */
+export const DEFAULT_VAT_RATE = 15;
+
+/**
+ * The VAT rate a document should be calculated at.
+ *
+ * Quotes and invoices carry the rate they were raised at (migration 0010).
+ * Before that column existed everything read the organisation's current rate
+ * live, which meant a rate change restated documents that had already been
+ * issued and sent — including rewriting their stored totals, because the
+ * reconcile paths recompute and save on every line-item and payment write.
+ *
+ * Order: the document's own rate, then the organisation's, then the statutory
+ * default. The last two are fallbacks for a row written before 0010 was
+ * applied, not the normal path.
+ *
+ * Note `== null` rather than `||`: a zero rate is legitimate. Zero-rated
+ * supplies and exports are charged at 0%, which is not the same thing as a
+ * line being non-vatable, and `0 || 15` would silently bill VAT on an export.
+ */
+export function resolveVatRate(
+  documentRate: number | string | null | undefined,
+  orgRate: number | string | null | undefined
+): number {
+  for (const candidate of [documentRate, orgRate]) {
+    // Trimmed before the blank test, not just compared to "". Number(" ") is
+    // 0, so a whitespace-only value would otherwise resolve to a 0% rate —
+    // the precise failure the `== null` check above was written to avoid,
+    // arriving by the other door.
+    if (candidate == null || String(candidate).trim() === "") continue;
+    // PostgREST can hand a numeric column back as a string.
+    const value = Number(candidate);
+    if (Number.isFinite(value) && value >= 0 && value <= 100) return value;
+  }
+  return DEFAULT_VAT_RATE;
+}

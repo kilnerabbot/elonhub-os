@@ -166,7 +166,7 @@ export async function updateTicket(
       : null;
   const closedAt = status === "closed" ? (current.closed_at ?? now) : null;
 
-  const { data, error } = await supabase
+  const { error, count } = await supabase
     .from("tickets")
     .update(
       {
@@ -175,17 +175,24 @@ export async function updateTicket(
         assignee_id: assigneeId || null,
         resolved_at: resolvedAt,
         closed_at: closedAt,
-      }
+      },
+      // Deliberately the count option here, unlike the sibling actions, which
+      // read rows back with .select().
+      //
+      // This update writes assignee_id, and tickets_select keys off
+      // assignee_id for anyone who is not an admin or a support agent.
+      // Postgres applies the SELECT policy as a post-update check whenever
+      // rows are returned, so asking for them would make an assignee
+      // reassigning their own ticket write a row they can no longer see, and
+      // get 42501 instead of a saved change.
+      { count: "exact" }
     )
-    .eq("id", ticketId)
-    // Read back rather than counting: count is null on a bodyless update, so
-    // the rejection check below never fired.
-    .select("id");
+    .eq("id", ticketId);
 
   if (error) {
     return { ok: false, errors: {}, message: describeDbError(error, "updateTicket.update") };
   }
-  if (!data || data.length === 0) {
+  if (count === 0) {
     return {
       ok: false,
       errors: {},

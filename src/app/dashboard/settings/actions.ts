@@ -141,9 +141,8 @@ export async function updateOrganisation(
     };
   }
 
-  // An empty result is the rejection. The `count` option cannot be used for
-  // this: it is only filled from a content-range header, which a bodyless
-  // update never returns, so it reads null whether the write landed or not.
+  // An empty result is the rejection: RLS filtered the row out of the scan,
+  // so nothing was written.
   if (!data || data.length === 0) {
     return {
       ok: false,

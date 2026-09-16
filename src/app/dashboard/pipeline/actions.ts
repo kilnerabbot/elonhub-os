@@ -26,8 +26,9 @@ export async function moveOpportunity(
   // Probability tracks the stage. Without this the weighted forecast on the
   // dashboard keeps using the old stage's odds after a deal moves, and quietly
   // reports a number nobody entered.
-  // .select() rather than the count option: an update with no select returns
-  // 204 with no content-range, so count is null whether it worked or not.
+  // .select() rather than the count option. Both report a rejection correctly;
+  // the returned rows are simply the more direct evidence, and the same shape
+  // is needed in updateRole to read a value back.
   const { data, error } = await supabase
     .from("opportunities")
     .update({ stage, probability: STAGE_PROBABILITY[stage] })
@@ -35,8 +36,8 @@ export async function moveOpportunity(
     .select("id");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "moveOpportunity.update") };
-  // Not a count check: see the .select() note above — count is null on a
-  // bodyless update regardless of outcome. An empty result is the rejection.
+  // An empty result is the rejection: RLS filters the row out of the scan, so
+  // nothing was written.
   if (!data || data.length === 0) {
     return {
       ok: false,

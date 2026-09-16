@@ -100,8 +100,9 @@ export async function setProjectStage(
   if (!v.ok) return v.fail();
 
   const supabase = await createClient();
-  // .select() rather than the count option: an update with no select returns
-  // 204 with no content-range, so count is null whether it worked or not.
+  // .select() rather than the count option. Both report a rejection correctly;
+  // the returned rows are simply the more direct evidence, and the same shape
+  // is needed in updateRole to read a value back.
   const { data, error } = await supabase
     .from("projects")
     .update({ stage })
@@ -109,8 +110,8 @@ export async function setProjectStage(
     .select("id");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "setProjectStage.update") };
-  // Not a count check: see the .select() note above — count is null on a
-  // bodyless update regardless of outcome. An empty result is the rejection.
+  // An empty result is the rejection: RLS filters the row out of the scan, so
+  // nothing was written.
   if (!data || data.length === 0) {
     return { ok: false, errors: {}, message: "Rejected — only the project manager can do that." };
   }
@@ -175,8 +176,9 @@ export async function setTaskStatus(
   if (!v.ok) return v.fail();
 
   const supabase = await createClient();
-  // .select() rather than the count option: an update with no select returns
-  // 204 with no content-range, so count is null whether it worked or not.
+  // .select() rather than the count option. Both report a rejection correctly;
+  // the returned rows are simply the more direct evidence, and the same shape
+  // is needed in updateRole to read a value back.
   const { data, error } = await supabase
     .from("tasks")
     .update({ status })
@@ -184,8 +186,8 @@ export async function setTaskStatus(
     .select("id");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "setTaskStatus.update") };
-  // Not a count check: see the .select() note above — count is null on a
-  // bodyless update regardless of outcome. An empty result is the rejection.
+  // An empty result is the rejection: RLS filters the row out of the scan, so
+  // nothing was written.
   if (!data || data.length === 0) {
     return {
       ok: false,

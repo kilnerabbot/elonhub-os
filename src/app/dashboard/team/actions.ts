@@ -18,6 +18,18 @@ export async function updateRole(
   _prev: ActionResult | null,
   formData: FormData
 ): Promise<ActionResult> {
+  // This action was relying on RLS alone. That is the right call for the
+  // row-scoped actions elsewhere, where only the database knows whether the
+  // caller owns the row — but changing a role is a flat role check that
+  // permissions.ts already encodes, and addMember and revokeInvitation in this
+  // same file both gate on it. Leaving the gate out made this the only write
+  // in the app with a single control behind it.
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (!canInviteMember(session.role)) {
+    return { ok: false, errors: {}, message: "Only a super admin can change roles." };
+  }
+
   const userId = formData.get("user_id");
   const role = formData.get("role");
 
@@ -35,12 +47,9 @@ export async function updateRole(
   // The prevent_role_escalation trigger and RLS remain the real guards. This
   // reports what they decided rather than discarding it.
   //
-  // The result is read back through .select() rather than from the `count`
-  // option. `count` is only populated when PostgREST returns a content-range
-  // header, and it only does that for a response with a body — an update with
-  // no .select() replies 204 No Content, so count is null every time, whether
-  // the write succeeded or RLS threw it away. Chaining .select() forces a
-  // representation, so the returned rows are the actual evidence.
+  // The result is read back with .select() because this action needs the
+  // stored role, not just a row count — see the revert check below. A count
+  // would report 1 for a change the trigger quietly undid.
   const { data, error } = await supabase
     .from("profiles")
     .update({ role: validRole })

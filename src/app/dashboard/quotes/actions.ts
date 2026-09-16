@@ -190,10 +190,8 @@ export async function setQuoteStatus(
   if (!v.ok) return v.fail();
 
   const supabase = await createClient();
-  // Read back through .select() rather than the count option. count is only
-  // filled from a content-range header, which a bodyless update never returns,
-  // so it was null on every call and this check never fired — an RLS
-  // rejection reported itself as a successful change.
+  // Read back through .select() rather than the count option. Either reports
+  // an RLS rejection correctly; the rows are just the more direct evidence.
   const { data, error } = await supabase
     .from("quotes")
     .update({ status })

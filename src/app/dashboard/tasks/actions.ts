@@ -28,8 +28,7 @@ export async function moveTask(
   if (!valid) return { ok: false, errors: {}, message: "Unknown status." };
 
   const supabase = await createClient();
-  // Read back through .select(); count is null on a bodyless update, so the
-  // rejection path below was unreachable.
+  // Read back through .select(); an empty result is the rejection.
   const { data, error } = await supabase
     .from("tasks")
     .update({ status: valid })

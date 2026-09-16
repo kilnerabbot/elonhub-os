@@ -1,7 +1,68 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { usePathname } from "next/navigation";
+
+type NavDrawer = { open: boolean; toggle: () => void };
+
+const NavDrawerContext = createContext<NavDrawer | null>(null);
+
+/**
+ * The toggle, for whichever bar wants to host it.
+ *
+ * Exposed through context rather than rendered here so the shell does not need
+ * a header of its own. A second bar just for a hamburger costs about 50px of a
+ * 667px phone viewport and duplicates the wordmark that is already in the
+ * sidebar; TopBar is on screen anyway, so the button belongs there.
+ */
+export function NavDrawerToggle() {
+  const drawer = useContext(NavDrawerContext);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const open = drawer?.open ?? false;
+
+  // Focus return, and it belongs here rather than in the shell: the element to
+  // focus is this button, and keeping the ref local means nothing ref-shaped
+  // travels through context.
+  //
+  // When the drawer shuts, whatever was focused inside it becomes
+  // visibility:hidden and the browser drops focus to <body> — the user loses
+  // their place with no visible caret anywhere.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (wasOpen.current && !open) buttonRef.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
+
+  if (!drawer) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={drawer.toggle}
+      ref={buttonRef}
+      aria-label={open ? "Close navigation" : "Open navigation"}
+      aria-expanded={open}
+      aria-controls="dashboard-sidebar"
+      className="grid size-10 flex-none place-items-center rounded-lg border border-border text-text transition-colors hover:bg-surface-2 lg:hidden"
+    >
+      <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
+        <path
+          d="M2 4h12M2 8h12M2 12h12"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
+  );
+}
 
 /**
  * The dashboard's two-column shell, with the sidebar off-canvas on small
@@ -13,8 +74,6 @@ import { usePathname } from "next/navigation";
  * just to make a drawer open. This component only decides where it sits.
  *
  * At `lg` and above nothing changes: the same static 16rem column as before.
- * Below that it becomes a drawer over a backdrop, and a compact bar appears
- * with the toggle.
  */
 export function DashboardShell({
   sidebar,
@@ -26,7 +85,6 @@ export function DashboardShell({
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const [navigatedFrom, setNavigatedFrom] = useState(pathname);
-
   // Navigating is the most common way to be finished with the drawer, and on a
   // phone the page behind it is hidden entirely — leaving it open after a tap
   // would look like the tap did nothing.
@@ -39,92 +97,81 @@ export function DashboardShell({
     setOpen(false);
   }
 
-  // Escape closes it, as with any overlay. Bound only while open so the handler
-  // is not sitting on every page for a drawer that is not there.
   useEffect(() => {
     if (!open) return;
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
 
-  // The page behind must not scroll while the drawer covers it, or a swipe
-  // moves the wrong thing.
-  useEffect(() => {
-    if (!open) return;
-    const previous = document.body.style.overflow;
+    // Crossing into lg turns the drawer back into a static column and hides the
+    // backdrop, but `open` would stay true and the scroll lock below with it —
+    // an iPad rotated from portrait to landscape would be left unable to
+    // scroll, with no visible control to release it.
+    const wide = window.matchMedia("(min-width: 64rem)");
+    const onWide = () => {
+      if (wide.matches) setOpen(false);
+    };
+    onWide();
+
+    // The page behind must not scroll while the drawer covers it, or a swipe
+    // moves the wrong thing.
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    window.addEventListener("keydown", onKey);
+    wide.addEventListener("change", onWide);
     return () => {
-      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+      wide.removeEventListener("change", onWide);
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg lg:flex-row lg:gap-4 lg:p-4">
-      {/*
-        Mobile header. Hidden at lg, where the sidebar carries the wordmark.
+    <NavDrawerContext.Provider
+      value={{ open, toggle: () => setOpen((o) => !o) }}
+    >
+      <div className="flex min-h-screen flex-col bg-bg lg:flex-row lg:gap-4 lg:p-4">
+        {open && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+        )}
 
-        In flow and sticky rather than fixed: a fixed header has to be paid for
-        with a matching padding-top on the content, and that number is wrong the
-        moment anything in here changes size. Letting it occupy a row costs
-        nothing and cannot drift.
-      */}
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-bg px-4 py-3 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open navigation"
-          aria-expanded={open}
-          aria-controls="dashboard-sidebar"
-          className="grid size-9 place-items-center rounded-lg border border-border text-text transition-colors hover:bg-surface-2"
-        >
-          <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
-            <path
-              d="M2 4h12M2 8h12M2 12h12"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-        <span className="grid size-7 place-items-center rounded-lg bg-accent text-[13px] font-bold text-white">
-          E
-        </span>
-        <span className="text-sm font-semibold tracking-tight text-text">elonhub</span>
-      </header>
+        {/*
+          One element, positioned two ways, so the navigation markup exists
+          once. Rendering a separate mobile copy would duplicate every link and
+          let the two drift apart.
 
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          `invisible` matters as much as the translate. Moving the panel
+          off-canvas only moves paint: on a phone with the drawer shut, every
+          link in here would still be in the tab order and still announced by a
+          screen reader, so tabbing off the toggle would land on something
+          invisible and unscrollable-to. `visibility: hidden` takes the subtree
+          out of both, still animates, and `lg:visible` leaves the desktop
+          column exactly as it was.
+        */}
+        <aside
+          id="dashboard-sidebar"
+          // Any tap on a link inside closes it, which the pathname check above
+          // cannot cover: tapping the route you are already on, or a
+          // query-only change, leaves the pathname identical and the drawer
+          // sitting open over the page looking unresponsive.
           onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+          className={`fixed inset-y-0 left-0 z-50 flex w-[17rem] max-w-[85vw] overflow-y-auto transition-transform duration-200 ease-out motion-reduce:transition-none lg:static lg:z-auto lg:w-64 lg:max-w-none lg:flex-none lg:translate-x-0 lg:overflow-visible lg:transition-none lg:visible ${
+            open ? "translate-x-0" : "invisible -translate-x-full"
+          }`}
+        >
+          {sidebar}
+        </aside>
 
-      {/*
-        One element, positioned two ways, so the navigation markup exists once.
-        Rendering a separate mobile copy would duplicate every link and let the
-        two drift apart.
-
-        `hidden` is not used for the closed state: that would remove it from the
-        accessibility tree at lg as well. Instead it is translated off-canvas
-        and made inert to assistive technology only while closed on small
-        screens.
-      */}
-      <aside
-        id="dashboard-sidebar"
-        className={`fixed inset-y-0 left-0 z-50 w-[17rem] max-w-[85vw] overflow-y-auto transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-64 lg:max-w-none lg:flex-none lg:translate-x-0 lg:transition-none ${
-          open ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        {sidebar}
-      </aside>
-
-      <main className="min-w-0 flex-1 overflow-hidden bg-surface lg:rounded-2xl">
-        {children}
-      </main>
-    </div>
+        <main className="min-w-0 flex-1 overflow-hidden bg-surface lg:rounded-2xl">
+          {children}
+        </main>
+      </div>
+    </NavDrawerContext.Provider>
   );
 }

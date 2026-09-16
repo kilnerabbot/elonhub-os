@@ -41,7 +41,12 @@ export default async function TeamPage() {
         {isAdmin ? "You can change roles below." : ""}
       </p>
 
-      <div className="mb-4 overflow-x-auto rounded-2xl border border-border">
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="Team members"
+        className="mb-4 overflow-x-auto rounded-2xl border border-border"
+      >
         <table className="w-full min-w-[34rem] text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-2">
@@ -99,7 +104,7 @@ export default async function TeamPage() {
                       <button
                         type="submit"
                         aria-label={`Revoke invitation for ${i.email}`}
-                        className="text-[11px] text-text-faint transition-colors hover:text-danger"
+                        className="-m-2 p-2 text-[11px] text-text-faint transition-colors hover:text-danger"
                       >
                         Revoke
                       </button>

@@ -3,7 +3,7 @@
 import { useFormStatus } from "react-dom";
 
 const BASE =
-  "w-full rounded-lg border bg-surface-2 px-3 py-2 text-sm text-text outline-none transition-colors placeholder:text-text-faint focus:border-border-strong";
+  "w-full rounded-lg border bg-surface-2 px-3 py-2.5 text-base text-text outline-none transition-colors placeholder:text-text-faint focus:border-border-strong sm:py-2 sm:text-sm";
 
 export function Field({
   name,

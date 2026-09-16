@@ -37,7 +37,12 @@ export default async function ServicesPage() {
           </p>
         </div>
       ) : (
-        <div className="mb-4 overflow-x-auto rounded-2xl border border-border">
+        <div
+        tabIndex={0}
+        role="region"
+        aria-label="Service catalogue"
+        className="mb-4 overflow-x-auto rounded-2xl border border-border"
+      >
           <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="border-b border-border bg-surface-2 text-left">

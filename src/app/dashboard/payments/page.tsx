@@ -103,7 +103,12 @@ export default async function PaymentsPage() {
         {paymentRows.length === 0 ? (
           <p className="text-[13px] text-text-dim">Nothing received yet.</p>
         ) : (
-          <div className="-mx-1 overflow-x-auto px-1">
+          <div
+              tabIndex={0}
+              role="region"
+              aria-label="Payments received"
+              className="-mx-1 overflow-x-auto px-1"
+            >
             <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="border-b border-border text-left">

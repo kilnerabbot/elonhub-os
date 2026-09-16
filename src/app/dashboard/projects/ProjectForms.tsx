@@ -216,7 +216,7 @@ export function TaskStatusSelect({
         disabled={pending}
         aria-label="Task status"
         onChange={(e) => e.currentTarget.form?.requestSubmit()}
-        className={`rounded border bg-surface px-1.5 py-1 text-[11px] capitalize text-text disabled:opacity-60 ${
+        className={`rounded border bg-surface px-1.5 py-2 text-base capitalize text-text disabled:opacity-60 sm:py-1 sm:text-[11px] ${
           failed ? "border-danger" : "border-border"
         }`}
       >

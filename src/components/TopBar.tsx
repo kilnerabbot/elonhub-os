@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { MAX_QUERY_LENGTH } from "@/lib/search";
+import { NavDrawerToggle } from "@/components/DashboardShell";
 
 const TITLES: Record<string, string> = {
   "/dashboard": "Analytical Board",
@@ -29,7 +30,8 @@ export function TopBar() {
   const title = TITLES[pathname] ?? "ElonHub OS";
 
   return (
-    <header className="flex items-center gap-3 border-b border-border px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
+    <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-surface px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
+      <NavDrawerToggle />
       <div className="flex items-center gap-2.5">
         <svg viewBox="0 0 16 16" className="size-4 text-text" aria-hidden="true">
           <rect x="1" y="7" width="3" height="8" fill="currentColor" />

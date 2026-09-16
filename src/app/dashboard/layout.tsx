@@ -52,6 +52,7 @@ const SECTIONS = [
     heading: "Boards",
     items: [
       { href: "/dashboard", label: "Analytics", icon: ICONS.grid },
+      { href: "/dashboard/search", label: "Search", icon: ICONS.life },
       { href: "/dashboard/crm", label: "Customers", icon: ICONS.users },
       { href: "/dashboard/crm/leads", label: "Leads", icon: ICONS.life },
       { href: "/dashboard/pipeline", label: "Pipeline", icon: ICONS.coins },
@@ -149,7 +150,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <form action={signOut} className="mt-3">
             <button
               type="submit"
-              className="rounded-lg bg-rail px-3 py-1.5 text-[11px] font-medium text-rail-text transition-colors hover:bg-accent"
+              className="rounded-lg bg-rail px-3 py-2.5 text-[11px] font-medium text-rail-text transition-colors hover:bg-accent sm:py-1.5"
             >
               Sign out
             </button>
@@ -158,7 +159,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       }
     >
-      <Suspense fallback={<div className="h-[57px] border-b border-border" />}>
+      <Suspense fallback={<div className="h-[49px] border-b border-border sm:h-[57px]" />}>
         <TopBar />
       </Suspense>
       <div className="overflow-y-auto">{children}</div>

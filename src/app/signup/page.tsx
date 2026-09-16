@@ -39,7 +39,7 @@ export default async function SignupPage({
               type="text"
               required
               autoComplete="name"
-              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
+              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text outline-none transition-colors focus:border-gold sm:text-sm"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -52,7 +52,7 @@ export default async function SignupPage({
               type="email"
               required
               autoComplete="email"
-              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
+              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text outline-none transition-colors focus:border-gold sm:text-sm"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -66,7 +66,7 @@ export default async function SignupPage({
               required
               minLength={8}
               autoComplete="new-password"
-              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-sm text-text outline-none transition-colors focus:border-gold"
+              className="rounded-lg border border-border-strong bg-surface px-3.5 py-2.5 text-base text-text outline-none transition-colors focus:border-gold sm:text-sm"
             />
           </div>
           <button

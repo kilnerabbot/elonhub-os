@@ -105,7 +105,9 @@ export function TaskBoard({ tasks, today }: { tasks: BoardTask[]; today: string 
 
               <div className="flex flex-col gap-2">
                 {column.length === 0 && (
-                  <p className="text-[11px] text-text-faint">Drop a task here</p>
+                  <p className="text-[11px] text-text-faint">
+                    Nothing here. Use the menu on a card to move one in.
+                  </p>
                 )}
                 {column.map((task) => {
                   const overdue =
@@ -158,7 +160,7 @@ export function TaskBoard({ tasks, today }: { tasks: BoardTask[]; today: string 
                           <select
                             value={task.status}
                             onChange={(e) => drop(task.id, e.currentTarget.value)}
-                            className="w-full rounded border border-border bg-surface-2 px-1.5 py-1 text-[11px] capitalize text-text-dim"
+                            className="w-full rounded border border-border bg-surface-2 px-1.5 py-2 text-base capitalize text-text-dim sm:py-1 sm:text-[11px]"
                           >
                             {TASK_STATUSES.map((s) => (
                               <option key={s} value={s}>

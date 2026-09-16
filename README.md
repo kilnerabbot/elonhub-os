@@ -42,6 +42,9 @@ that's Phase 2. The schema for all of it already exists.
    quote and invoice, so changing the rate later cannot restate documents
    already issued. Until it is applied the VAT rate field stays locked —
    everything else works unchanged.
+7. Migration `0011_profiles_updated_at.sql` is **required**, not optional.
+   Without it every update to `profiles` fails with 42703 and no role can
+   be changed.
 
 ## Verifying a release
 

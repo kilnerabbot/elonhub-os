@@ -47,7 +47,22 @@ export async function updateRole(
     .eq("id", userId)
     .select("id, role");
 
-  if (error) return { ok: false, errors: {}, message: describeDbError(error, "updateRole.update") };
+  if (error) {
+    // 42703 here is a schema fault, not a permission one: set_updated_at is
+    // attached to profiles but profiles has no updated_at column, so the
+    // trigger raises before the row is ever written. Naming the migration
+    // turns a five-character code into an instruction.
+    if (error.code === "42703") {
+      describeDbError(error, "updateRole.update");
+      return {
+        ok: false,
+        errors: {},
+        message:
+          "Role changes are blocked by a schema fault. Apply migration 0011_profiles_updated_at.sql in the Supabase SQL editor, then try again.",
+      };
+    }
+    return { ok: false, errors: {}, message: describeDbError(error, "updateRole.update") };
+  }
 
   if (!data || data.length === 0) {
     return {

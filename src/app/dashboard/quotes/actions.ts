@@ -190,13 +190,18 @@ export async function setQuoteStatus(
   if (!v.ok) return v.fail();
 
   const supabase = await createClient();
-  const { error, count } = await supabase
+  // Read back through .select() rather than the count option. count is only
+  // filled from a content-range header, which a bodyless update never returns,
+  // so it was null on every call and this check never fired — an RLS
+  // rejection reported itself as a successful change.
+  const { data, error } = await supabase
     .from("quotes")
-    .update({ status }, { count: "exact" })
-    .eq("id", quoteId);
+    .update({ status })
+    .eq("id", quoteId)
+    .select("id");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "setQuoteStatus.update") };
-  if (count === 0) {
+  if (!data || data.length === 0) {
     return { ok: false, errors: {}, message: "That change was rejected — you do not own this quote." };
   }
 

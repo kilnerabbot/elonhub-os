@@ -28,13 +28,16 @@ export async function moveTask(
   if (!valid) return { ok: false, errors: {}, message: "Unknown status." };
 
   const supabase = await createClient();
-  const { error, count } = await supabase
+  // Read back through .select(); count is null on a bodyless update, so the
+  // rejection path below was unreachable.
+  const { data, error } = await supabase
     .from("tasks")
-    .update({ status: valid }, { count: "exact" })
-    .eq("id", taskId);
+    .update({ status: valid })
+    .eq("id", taskId)
+    .select("id");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "moveTask.update") };
-  if (count === 0) {
+  if (!data || data.length === 0) {
     return {
       ok: false,
       errors: {},

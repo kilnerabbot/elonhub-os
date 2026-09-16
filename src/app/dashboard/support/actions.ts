@@ -166,7 +166,7 @@ export async function updateTicket(
       : null;
   const closedAt = status === "closed" ? (current.closed_at ?? now) : null;
 
-  const { error, count } = await supabase
+  const { data, error } = await supabase
     .from("tickets")
     .update(
       {
@@ -175,15 +175,17 @@ export async function updateTicket(
         assignee_id: assigneeId || null,
         resolved_at: resolvedAt,
         closed_at: closedAt,
-      },
-      { count: "exact" }
+      }
     )
-    .eq("id", ticketId);
+    .eq("id", ticketId)
+    // Read back rather than counting: count is null on a bodyless update, so
+    // the rejection check below never fired.
+    .select("id");
 
   if (error) {
     return { ok: false, errors: {}, message: describeDbError(error, "updateTicket.update") };
   }
-  if (count === 0) {
+  if (!data || data.length === 0) {
     return {
       ok: false,
       errors: {},

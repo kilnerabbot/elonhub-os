@@ -115,12 +115,13 @@ export async function updateOrganisation(
   // migration 0009's `alter policy` is applied, because the original
   // org_update policy checked the role without checking the row.
   //
-  // count: "exact" so an RLS rejection reports itself instead of looking like
-  // a save that worked.
-  const { error, count } = await supabase
+  // The result is read back so an RLS rejection reports itself instead of
+  // looking like a save that worked.
+  const { data, error } = await supabase
     .from("organisations")
-    .update(patch, { count: "exact" })
-    .eq("id", session.orgId);
+    .update(patch)
+    .eq("id", session.orgId)
+    .select("id");
 
   if (error) {
     // The expected failure when migration 0009 has not been applied.
@@ -140,9 +141,10 @@ export async function updateOrganisation(
     };
   }
 
-  // Not `count === 0`: supabase-js types count as `number | null`, and a null
-  // would fall through and report a rejected write as saved.
-  if (count !== 1) {
+  // An empty result is the rejection. The `count` option cannot be used for
+  // this: it is only filled from a content-range header, which a bodyless
+  // update never returns, so it reads null whether the write landed or not.
+  if (!data || data.length === 0) {
     return {
       ok: false,
       errors: {},
@@ -203,15 +205,16 @@ export async function updateVatRate(
   const vatRate = Math.round(parsed * 100) / 100;
 
   const supabase = await createClient();
-  const { error, count } = await supabase
+  const { data, error } = await supabase
     .from("organisations")
-    .update({ vat_rate: vatRate }, { count: "exact" })
-    .eq("id", session.orgId);
+    .update({ vat_rate: vatRate })
+    .eq("id", session.orgId)
+    .select("id");
 
   if (error) {
     return { ok: false, errors: {}, message: describeDbError(error, "updateVatRate.update") };
   }
-  if (count !== 1) {
+  if (!data || data.length === 0) {
     return {
       ok: false,
       errors: {},

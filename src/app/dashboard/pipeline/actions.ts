@@ -26,15 +26,18 @@ export async function moveOpportunity(
   // Probability tracks the stage. Without this the weighted forecast on the
   // dashboard keeps using the old stage's odds after a deal moves, and quietly
   // reports a number nobody entered.
-  const { error, count } = await supabase
+  // .select() rather than the count option: an update with no select returns
+  // 204 with no content-range, so count is null whether it worked or not.
+  const { data, error } = await supabase
     .from("opportunities")
-    .update({ stage, probability: STAGE_PROBABILITY[stage] }, { count: "exact" })
-    .eq("id", id);
+    .update({ stage, probability: STAGE_PROBABILITY[stage] })
+    .eq("id", id)
+    .select("id");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "moveOpportunity.update") };
-  // Not `count === 0`: supabase-js types count as `number | null`, and a null
-  // would fall through and report a rejected write as a successful one.
-  if (count !== 1) {
+  // Not a count check: see the .select() note above — count is null on a
+  // bodyless update regardless of outcome. An empty result is the rejection.
+  if (!data || data.length === 0) {
     return {
       ok: false,
       errors: {},

@@ -33,21 +33,38 @@ export async function updateRole(
 
   const supabase = await createClient();
   // The prevent_role_escalation trigger and RLS remain the real guards. This
-  // reports what they decided rather than discarding it — a rejected change
-  // used to be indistinguishable from a successful one.
-  const { error, count } = await supabase
+  // reports what they decided rather than discarding it.
+  //
+  // The result is read back through .select() rather than from the `count`
+  // option. `count` is only populated when PostgREST returns a content-range
+  // header, and it only does that for a response with a body — an update with
+  // no .select() replies 204 No Content, so count is null every time, whether
+  // the write succeeded or RLS threw it away. Chaining .select() forces a
+  // representation, so the returned rows are the actual evidence.
+  const { data, error } = await supabase
     .from("profiles")
-    .update({ role: validRole }, { count: "exact" })
-    .eq("id", userId);
+    .update({ role: validRole })
+    .eq("id", userId)
+    .select("id, role");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "updateRole.update") };
-  // Not `count === 0`: supabase-js types count as `number | null`, and a null
-  // would fall through and report a rejected write as a successful one.
-  if (count !== 1) {
+
+  if (!data || data.length === 0) {
     return {
       ok: false,
       errors: {},
       message: "That change was rejected. Only a super admin can change roles.",
+    };
+  }
+
+  // prevent_role_escalation does not raise when it refuses — it quietly puts
+  // the old role back and lets the update succeed. So a row coming back is not
+  // proof the role changed; the role on that row is.
+  if (data[0].role !== validRole) {
+    return {
+      ok: false,
+      errors: {},
+      message: "The database refused that role change. Only a super admin can change roles.",
     };
   }
 

@@ -100,15 +100,18 @@ export async function setProjectStage(
   if (!v.ok) return v.fail();
 
   const supabase = await createClient();
-  const { error, count } = await supabase
+  // .select() rather than the count option: an update with no select returns
+  // 204 with no content-range, so count is null whether it worked or not.
+  const { data, error } = await supabase
     .from("projects")
-    .update({ stage }, { count: "exact" })
-    .eq("id", projectId);
+    .update({ stage })
+    .eq("id", projectId)
+    .select("id");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "setProjectStage.update") };
-  // Not `count === 0`: supabase-js types count as `number | null`, and a null
-  // would fall through and report a rejected write as a successful one.
-  if (count !== 1) {
+  // Not a count check: see the .select() note above — count is null on a
+  // bodyless update regardless of outcome. An empty result is the rejection.
+  if (!data || data.length === 0) {
     return { ok: false, errors: {}, message: "Rejected — only the project manager can do that." };
   }
 
@@ -172,15 +175,18 @@ export async function setTaskStatus(
   if (!v.ok) return v.fail();
 
   const supabase = await createClient();
-  const { error, count } = await supabase
+  // .select() rather than the count option: an update with no select returns
+  // 204 with no content-range, so count is null whether it worked or not.
+  const { data, error } = await supabase
     .from("tasks")
-    .update({ status }, { count: "exact" })
-    .eq("id", taskId);
+    .update({ status })
+    .eq("id", taskId)
+    .select("id");
 
   if (error) return { ok: false, errors: {}, message: describeDbError(error, "setTaskStatus.update") };
-  // Not `count === 0`: supabase-js types count as `number | null`, and a null
-  // would fall through and report a rejected write as a successful one.
-  if (count !== 1) {
+  // Not a count check: see the .select() note above — count is null on a
+  // bodyless update regardless of outcome. An empty result is the rejection.
+  if (!data || data.length === 0) {
     return {
       ok: false,
       errors: {},

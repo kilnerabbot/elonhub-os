@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { NavLink } from "@/components/NavLink";
 import { TopBar } from "@/components/TopBar";
+import { DashboardShell } from "@/components/DashboardShell";
 import { signOut } from "./actions";
 
 const ICONS = {
@@ -96,8 +97,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .join("");
 
   return (
-    <div className="flex min-h-screen gap-4 bg-bg p-4">
-      <aside className="flex w-64 flex-none flex-col rounded-2xl bg-rail px-3 py-5 text-rail-text">
+    <DashboardShell
+      sidebar={
+        <div className="flex min-h-full flex-col bg-rail px-3 py-5 text-rail-text lg:rounded-2xl">
         <div className="mb-6 flex items-center gap-2.5 px-2">
           <span className="grid size-8 place-items-center rounded-lg bg-accent text-sm font-bold text-white">
             E
@@ -153,14 +155,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </button>
           </form>
         </div>
-      </aside>
-
-      <main className="min-w-0 flex-1 overflow-hidden rounded-2xl bg-surface">
-        <Suspense fallback={<div className="h-[57px] border-b border-border" />}>
-          <TopBar />
-        </Suspense>
-        <div className="overflow-y-auto">{children}</div>
-      </main>
-    </div>
+        </div>
+      }
+    >
+      <Suspense fallback={<div className="h-[57px] border-b border-border" />}>
+        <TopBar />
+      </Suspense>
+      <div className="overflow-y-auto">{children}</div>
+    </DashboardShell>
   );
 }

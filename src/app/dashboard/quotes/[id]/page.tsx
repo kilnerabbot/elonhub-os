@@ -66,7 +66,7 @@ export default async function QuoteDetailPage({
   const existingInvoice = (raised ?? [])[0] ?? null;
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <Link href="/dashboard/quotes" className="text-[13px] text-text-dim hover:text-text">
         ← Quotes
       </Link>
@@ -110,7 +110,8 @@ export default async function QuoteDetailPage({
           {lines.length === 0 ? (
             <p className="text-[13px] text-text-dim">No lines yet. The quote totals zero.</p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="-mx-1 overflow-x-auto px-1">
+              <table className="w-full min-w-[34rem] text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
                   <th className="pb-2 text-[10.5px] font-medium uppercase tracking-[0.08em] text-text-faint">
@@ -171,6 +172,7 @@ export default async function QuoteDetailPage({
                 ))}
               </tbody>
             </table>
+            </div>
           )}
 
           <dl className="mt-4 flex flex-col gap-1.5 border-t border-border pt-4 text-sm">

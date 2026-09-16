@@ -36,7 +36,7 @@ export default async function QuotesPage() {
   const nameById = new Map((customers ?? []).map((c) => [c.id, c.legal_name]));
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <p className="mb-6 text-sm text-text-dim">
         Quotes your role can see. Totals are calculated from the line items.
       </p>

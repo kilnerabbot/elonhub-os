@@ -50,8 +50,8 @@ export function DocumentShell({
         </div>
       )}
 
-      <article className="document mx-auto w-[210mm] max-w-[95vw] bg-white p-[16mm] text-[#171715] shadow-sm print:w-auto print:max-w-none print:p-0 print:shadow-none">
-        <header className="flex items-start justify-between gap-8 border-b border-[#e2ded4] pb-6">
+      <article className="document mx-auto w-[210mm] max-w-[95vw] bg-white p-5 text-[#171715] shadow-sm sm:p-[16mm] print:w-auto print:max-w-none print:p-0 print:shadow-none">
+        <header className="flex flex-col items-start gap-4 border-b border-[#e2ded4] pb-6 sm:flex-row sm:justify-between sm:gap-8">
           <div>
             <div className="text-lg font-semibold tracking-tight">{head.name}</div>
             <div className="mt-1 text-[11px] leading-relaxed text-[#6b675e]">
@@ -72,7 +72,7 @@ export function DocumentShell({
           </div>
         </header>
 
-        <section className="mt-6 flex justify-between gap-8">
+        <section className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-between sm:gap-8">
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9a958a]">
               {party.heading}
@@ -117,7 +117,8 @@ export function LineTable({
   rows: ReactNode[][];
 }) {
   return (
-    <table className="w-full text-[12px]">
+    <div className="overflow-x-auto print:overflow-visible">
+      <table className="w-full min-w-[30rem] text-[12px] print:min-w-0">
       <thead>
         <tr className="border-b border-[#e2ded4]">
           {columns.map((c, i) => (
@@ -146,7 +147,8 @@ export function LineTable({
           </tr>
         ))}
       </tbody>
-    </table>
+      </table>
+    </div>
   );
 }
 

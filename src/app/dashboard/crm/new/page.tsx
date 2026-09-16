@@ -12,7 +12,7 @@ export default async function NewCustomerPage() {
   // control — someone can always navigate straight here.
   if (!canCreateCustomer(session.role)) {
     return (
-      <div className="max-w-xl p-6">
+      <div className="max-w-xl p-4 sm:p-6">
         <h2 className="text-lg font-semibold tracking-tight text-text">Not available</h2>
         <p className="mt-2 text-sm text-text-dim">
           Creating customers needs the sales manager or salesperson role. Yours is{" "}
@@ -26,7 +26,7 @@ export default async function NewCustomerPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <p className="mb-6 text-sm text-text-dim">
         You will be set as the owner. Only the legal name is required.
       </p>

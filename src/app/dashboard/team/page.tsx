@@ -35,14 +35,14 @@ export default async function TeamPage() {
   const pending = invitations ?? [];
 
   return (
-    <div className="max-w-3xl p-6">
+    <div className="max-w-3xl p-4 sm:p-6">
       <p className="mb-6 text-sm text-text-dim">
         Everyone with an account and the role they hold.{" "}
         {isAdmin ? "You can change roles below." : ""}
       </p>
 
-      <div className="mb-4 overflow-hidden rounded-2xl border border-border">
-        <table className="w-full text-sm">
+      <div className="mb-4 overflow-x-auto rounded-2xl border border-border">
+        <table className="w-full min-w-[34rem] text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-2">
               <th className="px-4 py-2.5 text-left text-[10.5px] font-medium uppercase tracking-[0.08em] text-text-faint">

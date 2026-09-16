@@ -80,7 +80,7 @@ export default async function TasksPage({
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {SCOPES.map((s) => (

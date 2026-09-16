@@ -38,7 +38,7 @@ export default async function LeadDetailPage({
   const canQuote = canCreateQuote(session.role);
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <Link href="/dashboard/crm/leads" className="text-[13px] text-text-dim hover:text-text">
         ← Leads
       </Link>

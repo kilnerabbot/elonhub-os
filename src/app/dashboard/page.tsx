@@ -159,7 +159,7 @@ export default async function DashboardPage() {
   const hasData = revenueYtd > 0 || outstanding > 0 || totalOpps > 0;
 
   return (
-    <div className="grid gap-4 p-6 xl:grid-cols-[260px_minmax(0,1fr)]">
+    <div className="grid gap-4 p-4 sm:p-6 xl:grid-cols-[260px_minmax(0,1fr)]">
       {/* ---------- left metric rail ---------- */}
       <div className="flex flex-col gap-5">
         <div>
@@ -208,7 +208,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <Card title="Revenue movement">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Metric label="This month" value={formatZAR(revenueMonth)} />
               <Metric label="Last month" value={formatZAR(revenuePrevMonth)} />
               <Metric label="Year to date" value={formatZAR(revenueYtd)} />

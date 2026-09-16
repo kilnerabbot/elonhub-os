@@ -83,7 +83,7 @@ export default async function SupportPage({
   };
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       {!canViewSupport(session.role) && (
         <p className="mb-4 text-sm text-text-dim">
           You are seeing only the tickets assigned to you.

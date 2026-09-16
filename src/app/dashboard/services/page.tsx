@@ -23,7 +23,7 @@ export default async function ServicesPage() {
   const rows = services ?? [];
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <p className="mb-6 text-sm text-text-dim">
         The priced services a quote can draw from.{" "}
         {!canManage && "Your role can read prices but not change them."}
@@ -37,8 +37,8 @@ export default async function ServicesPage() {
           </p>
         </div>
       ) : (
-        <div className="mb-4 overflow-hidden rounded-2xl border border-border">
-          <table className="w-full text-sm">
+        <div className="mb-4 overflow-x-auto rounded-2xl border border-border">
+          <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="border-b border-border bg-surface-2 text-left">
                 <Th>SKU</Th>

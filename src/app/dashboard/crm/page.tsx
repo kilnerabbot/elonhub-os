@@ -21,7 +21,7 @@ export default async function CustomersPage() {
   const canCreate = canCreateCustomer(session.role);
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <div className="mb-6 flex items-start justify-between gap-4">
         <p className="text-sm text-text-dim">
           Every customer your role can see. {!canCreate && "Your role is read-only here."}

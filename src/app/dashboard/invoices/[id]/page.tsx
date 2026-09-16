@@ -76,7 +76,7 @@ export default async function InvoiceDetailPage({
     canManage && !isEditable(invoice.status) && invoice.status !== "void" && outstanding > 0;
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <Link href="/dashboard/invoices" className="text-[13px] text-text-dim hover:text-text">
         ← Invoices
       </Link>
@@ -141,7 +141,8 @@ export default async function InvoiceDetailPage({
           {itemRows.length === 0 ? (
             <p className="text-[13px] text-text-dim">No lines yet.</p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="-mx-1 overflow-x-auto px-1">
+              <table className="w-full min-w-[34rem] text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
                   <Th>Description</Th>
@@ -188,6 +189,7 @@ export default async function InvoiceDetailPage({
                 ))}
               </tbody>
             </table>
+            </div>
           )}
 
           <dl className="mt-4 flex flex-col gap-1.5 border-t border-border pt-4 text-sm">

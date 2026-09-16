@@ -15,7 +15,7 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="max-w-3xl p-6">
+    <div className="max-w-3xl p-4 sm:p-6">
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="Your account">
           <dl className="flex flex-col gap-2 text-[13px]">

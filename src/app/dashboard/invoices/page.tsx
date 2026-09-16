@@ -48,7 +48,7 @@ export default async function InvoicesPage() {
   const overdueCount = rows.filter((i) => i.status === "overdue").length;
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <div className="mb-6 flex flex-wrap gap-6">
         <Stat label="Outstanding" value={formatZAR(outstanding)} />
         <Stat label="Overdue invoices" value={String(overdueCount)} tone={overdueCount > 0 ? "danger" : undefined} />

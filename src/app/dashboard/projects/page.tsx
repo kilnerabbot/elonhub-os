@@ -29,7 +29,7 @@ export default async function ProjectsPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <p className="mb-6 text-sm text-text-dim">
         Projects you manage or are assigned work on.{" "}
         {!canCreate && "Only project managers can open a new one."}

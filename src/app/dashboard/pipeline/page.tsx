@@ -28,7 +28,7 @@ export default async function PipelinePage() {
     .reduce((a, o) => a + num(o.value), 0);
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="mb-6 flex flex-wrap gap-6">
         <Summary label="Open pipeline" value={formatZAR(pipelineValue)} />
         <Summary label="Weighted forecast" value={formatZAR(weighted)} />

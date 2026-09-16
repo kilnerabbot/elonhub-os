@@ -34,7 +34,7 @@ export default async function SettingsPage() {
       ? describeDbError(error, "settingsPage.organisations")
       : "No organisation record was found for your account.";
     return (
-      <div className="max-w-4xl p-6">
+      <div className="max-w-4xl p-4 sm:p-6">
         <Card title="Company details">
           <p role="alert" className="text-[13px] text-danger">
             {message}
@@ -76,7 +76,7 @@ export default async function SettingsPage() {
   const rateEditable = editable && !probeError && snapshotReady === true;
 
   return (
-    <div className="flex max-w-4xl flex-col gap-4 p-6">
+    <div className="flex max-w-4xl flex-col gap-4 p-4 sm:p-6">
       {!head.vatNumber && (
         <p
           role="alert"
@@ -146,10 +146,12 @@ export default async function SettingsPage() {
           <>
             <VatRateForm defaultValue={String(vatRate)} />
             <p className="mt-4 text-[11px] leading-relaxed text-text-faint">
-              This applies to quotes and invoices raised from now on. Existing documents keep
-              the rate they were raised at, and an invoice converted from a quote is billed at
-              the quote&rsquo;s rate — so changing this can never restate something a client
-              has already been sent. Currency is {String(org.currency ?? "ZAR")}.
+              This applies to documents raised from now on. Anything already issued keeps the
+              rate it was issued at and is frozen there, so changing this cannot restate
+              something a client has been sent. An invoice takes the rate in force when it
+              leaves draft — the rate at the time of supply — which may differ from the quote
+              it came from; the quote screen warns before you convert when it does. Currency
+              is {String(org.currency ?? "ZAR")}.
             </p>
           </>
         ) : (

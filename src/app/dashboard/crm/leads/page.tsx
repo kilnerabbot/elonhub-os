@@ -27,7 +27,7 @@ export default async function LeadsPage() {
   const canCreate = canCreateLead(session.role);
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <div className="mb-6 flex items-start justify-between gap-4">
         <p className="text-sm text-text-dim">
           Inbound and manually captured leads. {!canCreate && "Your role is read-only here."}

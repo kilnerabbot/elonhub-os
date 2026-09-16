@@ -128,7 +128,7 @@ export default async function SearchPage({
   }
 
   return (
-    <div className="max-w-3xl p-6">
+    <div className="max-w-3xl p-4 sm:p-6">
       <p className="mb-6 text-sm text-text-dim">
         {total} {total === 1 ? "match" : "matches"} for{" "}
         <span className="font-medium text-text">“{clean}”</span>. Limited to what your role can
@@ -183,7 +183,7 @@ function Row({ hit }: { hit: Hit }) {
 
 function Empty({ heading, body }: { heading: string; body: string }) {
   return (
-    <div className="max-w-xl p-6">
+    <div className="max-w-xl p-4 sm:p-6">
       <h2 className="text-lg font-semibold tracking-tight text-text">{heading}</h2>
       <p className="mt-2 text-sm text-text-dim">{body}</p>
     </div>

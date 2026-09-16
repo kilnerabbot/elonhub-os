@@ -18,7 +18,7 @@ export default async function PaymentsPage() {
   // better than an empty page that looks like no money has ever come in.
   if (!canViewPayments(session.role)) {
     return (
-      <div className="max-w-xl p-6">
+      <div className="max-w-xl p-4 sm:p-6">
         <h2 className="text-lg font-semibold tracking-tight text-text">Not available</h2>
         <p className="mt-2 text-sm text-text-dim">
           The payments ledger is limited to finance and company leadership. Yours is{" "}
@@ -79,7 +79,7 @@ export default async function PaymentsPage() {
   const canRecord = canManageInvoices(session.role);
 
   return (
-    <div className="max-w-4xl p-6">
+    <div className="max-w-4xl p-4 sm:p-6">
       <div className="mb-6 flex flex-wrap gap-6">
         <Stat label="Received this month" value={formatZAR(receivedThisMonth)} />
         <Stat label="Received YTD" value={formatZAR(receivedYtd)} />
@@ -103,7 +103,8 @@ export default async function PaymentsPage() {
         {paymentRows.length === 0 ? (
           <p className="text-[13px] text-text-dim">Nothing received yet.</p>
         ) : (
-          <table className="w-full text-sm">
+          <div className="-mx-1 overflow-x-auto px-1">
+            <table className="w-full min-w-[34rem] text-sm">
             <thead>
               <tr className="border-b border-border text-left">
                 <Th>Date</Th>
@@ -176,6 +177,7 @@ export default async function PaymentsPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
     </div>

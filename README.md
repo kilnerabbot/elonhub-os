@@ -45,6 +45,15 @@ that's Phase 2. The schema for all of it already exists.
 7. Migration `0011_profiles_updated_at.sql` is **required**, not optional.
    Without it every update to `profiles` fails with 42703 and no role can
    be changed.
+8. Migrations `0012`, `0013` and `0014` tighten row level security. `0012`
+   puts the organisation predicate back into the update and delete policies
+   that checked only the caller's role, and needs `0001`, `0002`, `0005` and
+   `0007`. `0014` ties proof-of-payment files to the payment they belong to,
+   and needs `0006`. `0013` stops the last super admin being demoted, which
+   would otherwise leave an organisation nobody can administer. Each is
+   wrapped in a transaction and will fail naming the missing policy rather
+   than applying half of itself. None of them changes behaviour while there
+   is a single organisation.
 
 ## Verifying a release
 

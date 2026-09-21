@@ -58,7 +58,20 @@ export async function updateRole(
     .select("id, role");
 
   if (error) {
-    // 42703 here is a schema fault, not a permission one: set_updated_at is
+    // 23001 is the constraint trigger from 0013 refusing to let the last
+    // super admin be demoted. describeDbError maps codes to its own wording
+    // and has no entry for this one, so it is named here where the context is
+    // known.
+    if (error.code === "23001") {
+      describeDbError(error, "updateRole.update");
+      return {
+        ok: false,
+        errors: {},
+        message:
+          "That would leave the organisation with no super admin. Promote someone else first.",
+      };
+    }
+    // 42703 is a schema fault, not a permission one: set_updated_at is
     // attached to profiles but profiles has no updated_at column, so the
     // trigger raises before the row is ever written. Naming the migration
     // turns a five-character code into an instruction.

@@ -94,7 +94,7 @@ function PasswordField({
         autoComplete={autoComplete}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={`w-full rounded-lg border bg-surface-2 px-3 py-2 text-sm text-text outline-none focus:border-border-strong ${
+        className={`w-full rounded-lg border bg-surface-2 px-3 py-2.5 text-base text-text outline-none focus:border-border-strong sm:py-2 sm:text-sm ${
           error ? "border-danger" : "border-border"
         }`}
       />

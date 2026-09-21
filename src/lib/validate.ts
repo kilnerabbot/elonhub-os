@@ -152,10 +152,14 @@ export class Validator {
       this.errors[name] = `${label} must be at least ${min} characters.`;
       return "";
     }
-    if (raw.length > 72) {
-      // bcrypt truncates beyond 72 bytes, so anything longer is silently
-      // ignored past that point.
-      this.errors[name] = `${label} must be 72 characters or fewer.`;
+    // Measured in BYTES, not characters. bcrypt truncates at 72 bytes, and a
+    // 72-character password of accented or CJK characters is 144 to 216 bytes
+    // — so a length check on characters would silently hash only the first
+    // third of it and quietly hand back a much weaker password than the one
+    // that was chosen. Newer GoTrue rejects over-72-byte passwords outright,
+    // which would surface as a raw backend error instead of this message.
+    if (new TextEncoder().encode(raw).length > 72) {
+      this.errors[name] = `${label} must be 72 bytes or fewer — around 72 plain letters, or fewer if it uses accents or non-Latin characters.`;
       return "";
     }
     return raw;

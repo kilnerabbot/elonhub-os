@@ -81,3 +81,36 @@ assert.ok(!canEditCustomer("salesperson", "u2", "u1"), "salesperson cannot edit 
 assert.ok(!canEditCustomer("salesperson", null, "u1"), "unowned is not editable by salesperson");
 
 console.log("validate + permissions: all assertions passed");
+
+/* ---- password length is measured in bytes, as bcrypt measures it ---- */
+{
+  const form = (v) => {
+    const f = new FormData();
+    f.set("password", v);
+    return f;
+  };
+
+  // 72 plain ASCII characters is exactly 72 bytes: allowed.
+  const ascii72 = "a".repeat(72);
+  assert.equal(new Validator(form(ascii72)).password("password", "Password"), ascii72);
+
+  // 73 is one byte too many.
+  const v73 = new Validator(form("a".repeat(73)));
+  v73.password("password", "Password");
+  assert.ok(!v73.ok, "73 bytes is refused");
+
+  // 25 CJK characters is 75 bytes. A character-count check would let this
+  // through and bcrypt would silently hash only the first 72 bytes of it.
+  const cjk = "中".repeat(25);
+  assert.equal(cjk.length, 25, "25 characters");
+  assert.equal(new TextEncoder().encode(cjk).length, 75, "but 75 bytes");
+  const vCjk = new Validator(form(cjk));
+  vCjk.password("password", "Password");
+  assert.ok(!vCjk.ok, "measured in bytes, so this is refused");
+
+  // 24 of them is 72 bytes, which fits.
+  const cjkFits = "中".repeat(24);
+  assert.equal(new Validator(form(cjkFits)).password("password", "Password"), cjkFits);
+}
+
+console.log("validate: password byte length passed");

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui";
 import { label } from "@/lib/domain";
 import { RoleSelect } from "./RoleSelect";
+import { SetPasswordForm } from "./SetPasswordForm";
 import { MemberForm } from "./MemberForm";
 import { revokeInvitation } from "./actions";
 
@@ -71,7 +72,15 @@ export default async function TeamPage() {
                 </td>
                 <td className="px-4 py-3">
                   {isAdmin ? (
-                    <RoleSelect userId={t.id} role={t.role} />
+                    <div className="flex flex-col items-start gap-1.5">
+                      <RoleSelect userId={t.id} role={t.role} />
+                      {/* Not offered for your own row: the account screen
+                          checks the current password first, and this path
+                          cannot. */}
+                      {t.id !== session.userId && (
+                        <SetPasswordForm userId={t.id} name={t.full_name} />
+                      )}
+                    </div>
                   ) : (
                     <span className="text-xs capitalize text-text-dim">{label(t.role)}</span>
                   )}

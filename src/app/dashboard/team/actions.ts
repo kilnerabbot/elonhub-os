@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { canInviteMember } from "@/lib/permissions";
+import { canInviteMember, canResetPassword } from "@/lib/permissions";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Validator, describeDbError, field, type ActionResult } from "@/lib/validate";
@@ -198,4 +199,175 @@ export async function revokeInvitation(formData: FormData) {
   await supabase.from("invitations").delete().eq("id", id);
 
   revalidatePath("/dashboard/team");
+}
+
+/**
+ * Set another member's password.
+ *
+ * There is no self-service reset in this app, so without this a forgotten
+ * password means a trip to the Supabase dashboard. It is also the most
+ * dangerous action in the product: it goes through the service-role key, which
+ * bypasses every RLS policy, and it hands over an account outright.
+ *
+ * Every guard below is load-bearing in a way the rest of the app's checks are
+ * not — for ordinary writes the database gets the final say, and here it gets
+ * no say at all.
+ *
+ * IT DOES NOT END THE TARGET'S SESSIONS. Supabase's admin API can only end a
+ * session it holds the JWT for; there is no revoke-by-user-id, and deleting
+ * the auth user would cascade their profile away. So for an account that is
+ * already compromised this buys very little: the intruder's access token stays
+ * valid until it expires, and their refresh token keeps working. The only
+ * instant, complete revocation is rotating the project JWT secret, which signs
+ * everybody out. The form says so.
+ */
+export async function resetMemberPassword(
+  _prev: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+  if (!canResetPassword(session.role)) {
+    return { ok: false, errors: {}, message: "Only a super admin can set someone's password." };
+  }
+
+  const userId = formData.get("user_id");
+  if (typeof userId !== "string" || !userId) {
+    return { ok: false, errors: {}, message: "Missing user." };
+  }
+
+  const v = new Validator(formData);
+  // The caller's OWN password, as a step-up challenge. A stolen super_admin
+  // session is otherwise a credential-harvesting tool: every colleague's
+  // password reset one row at a time, with nothing asked at any point. This is
+  // the same check changePassword makes, for the same reason.
+  const actorPassword = v.password("actor_password", "Your password", 1);
+  const password = v.password("password", "Password");
+  const confirm = v.password("confirm_password", "Confirmation", 1);
+  if (!v.ok) return v.fail();
+  if (password !== confirm) {
+    return { ok: false, errors: { confirm_password: "The two passwords do not match." } };
+  }
+
+  // Membership is proved with the REQUEST-SCOPED client, before the
+  // service-role client exists. profiles_select is org-scoped, so a target
+  // outside the caller's organisation does not come back.
+  //
+  // org_id is compared here as well rather than left entirely to the policy.
+  // profiles_update_self and profiles_delete have no org predicate, and anyone
+  // debugging with RLS disabled would silently turn this guard into a no-op
+  // while the service-role write below carried on regardless.
+  const supabase = await createClient();
+  const { data: target, error: lookupError } = await supabase
+    .from("profiles")
+    .select("id, full_name, org_id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (lookupError) {
+    // 22P02 is a malformed uuid, which also means nothing unparseable can
+    // reach the admin API's URL path below.
+    return { ok: false, errors: {}, message: describeDbError(lookupError, "resetPassword.lookup") };
+  }
+  if (!target || target.org_id !== session.orgId) {
+    return { ok: false, errors: {}, message: "That person is not in your organisation." };
+  }
+
+  // Compared against the id POSTGRES returned, never the raw form value.
+  //
+  // Postgres accepts a uuid in upper case, in braces, or without dashes, and
+  // normalises all of them; GoTrue's parser is just as forgiving. A string
+  // comparison against the submitted text therefore misses when the same uuid
+  // arrives in a different shape, and the check would pass while every later
+  // step resolved to the caller themselves.
+  //
+  // That matters because the account screen verifies the CURRENT password
+  // before changing it, precisely so a hijacked live session cannot lock the
+  // real owner out. This path proves nothing about the target, so it must not
+  // become a way to change your own password without that check.
+  if (target.id === session.userId) {
+    return {
+      ok: false,
+      errors: {},
+      message: "Change your own password from Your account, where the current one is checked.",
+    };
+  }
+
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor?.email) redirect("/login");
+
+  // Verified on a throwaway client that persists nothing. The request-scoped
+  // client would issue a fresh session and rewrite the auth cookies as a side
+  // effect of a check that is meant to be read-only.
+  const verifier = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+  const { error: verifyError } = await verifier.auth.signInWithPassword({
+    email: actor.email,
+    password: actorPassword,
+  });
+  if (verifyError) {
+    return { ok: false, errors: { actor_password: "That is not your password." } };
+  }
+
+  const admin = createAdminClient();
+  if (!admin) {
+    return {
+      ok: false,
+      errors: {},
+      message:
+        "Setting a password needs SUPABASE_SERVICE_ROLE_KEY set in the Vercel environment. See README.",
+    };
+  }
+
+  const { error: authError } = await admin.auth.admin.updateUserById(target.id, { password });
+
+  if (authError) {
+    // Never log the password, and never echo it back in an error.
+    console.error("[auth] resetMemberPassword", {
+      status: authError.status,
+      message: authError.message,
+      target: target.id,
+      actor: session.userId,
+    });
+    return { ok: false, errors: {}, message: authError.message };
+  }
+
+  // auth.users carries none of the audit triggers from 0001_init.sql — they
+  // are all on public tables — so without this there is no record anywhere
+  // that one person took over another's account. Written with the service-role
+  // client because audit_log has no insert policy: it is normally only ever
+  // written by SECURITY DEFINER triggers, and giving clients one would let any
+  // of them forge entries.
+  const { error: auditError } = await admin.from("audit_log").insert({
+    org_id: session.orgId,
+    actor_id: session.userId,
+    table_name: "auth.users",
+    record_id: target.id,
+    action: "update",
+    // The password never goes near this row, in either column.
+    before: null,
+    after: { field: "password", set_by_admin: true },
+  });
+
+  // A failed audit write must not be reported as a failed password change —
+  // the password HAS changed by this point, and saying otherwise would send
+  // the administrator to try again against credentials that already moved.
+  // Logged under its own distinct prefix so the one case where a credential
+  // takeover went unrecorded is greppable rather than buried among [db] noise.
+  if (auditError) {
+    console.error("[audit] MISSING password-reset record", {
+      target: target.id,
+      actor: session.userId,
+      code: auditError.code,
+      message: auditError.message,
+    });
+  }
+
+  revalidatePath("/dashboard/team");
+  return { ok: true };
 }

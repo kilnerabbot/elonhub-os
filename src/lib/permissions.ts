@@ -91,6 +91,23 @@ export function canEditOrganisation(role: AppRole): boolean {
   return role === "super_admin";
 }
 
+/**
+ * Whether this user may set someone else's password.
+ *
+ * Its own predicate rather than a reuse of canInviteMember, even though the
+ * role list is identical. Adding a colleague and taking over their credentials
+ * are different authorities, and if either ever widens it must not silently
+ * drag the other with it.
+ *
+ * There is no RLS behind this one. Setting a password goes through the
+ * service-role key, which bypasses every policy in the database, so unlike the
+ * rest of this file the check in the server action is the only thing standing
+ * between a caller and the credentials of everyone in the organisation.
+ */
+export function canResetPassword(role: AppRole): boolean {
+  return role === "super_admin";
+}
+
 /** tickets_select: admins, support agents, and the assignee. */
 export function canViewSupport(role: AppRole): boolean {
   return role === "super_admin" || role === "director" || role === "support_agent";
